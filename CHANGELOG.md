@@ -5,6 +5,30 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.8.0] - 2025-01-10
+
+### Added
+- **Enhanced GPS Location System**: Comprehensive GPS functionality with automatic location requests and visual status indicators
+  - Automatic GPS location request on form load for immediate proximity sorting
+  - Visual GPS status indicators with color-coded icons (green/red/yellow)
+  - Manual GPS refresh button with loading animation and error handling
+  - Real-time location accuracy display with meter precision
+  - Clear user feedback for permission states and location errors
+  - Proximity sorting notification when GPS coordinates are available
+
+### Enhanced
+- Both add meal and edit meal forms now actively request current GPS coordinates
+- Restaurant selection dropdowns automatically sort by distance when GPS is active
+- Improved user experience with clear location status and manual control options
+- Enhanced geolocation hook with configurable options for accuracy and timeout
+
+### Technical Implementation
+- Enhanced `useGeolocation` hook with automatic location requests and permission management
+- Added GPS status component with visual indicators and manual refresh functionality
+- Implemented proximity-based restaurant sorting with distance calculations
+- Added comprehensive error handling and user feedback for location services
+- Consistent GPS integration across all meal management forms
+
 ## [0.7.0] - 2025-01-10
 
 ### Added

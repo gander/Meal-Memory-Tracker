@@ -111,6 +111,19 @@ Version management: Never display version in README, update only when explicitly
 
 ## Recent Changes (January 2025)
 
+### Enhanced GPS Location System (v0.8.0)
+- **Problem**: Users needed more active GPS functionality with clear status feedback and manual control
+- **Solution**: Implemented comprehensive GPS system with automatic requests and visual indicators
+- **Features**:
+  - Automatic GPS location request on form load for immediate restaurant proximity sorting
+  - Visual GPS status indicators with color-coded icons showing permission state and accuracy
+  - Manual refresh button with loading animations and comprehensive error handling
+  - Real-time location accuracy display with meter precision for user confidence
+  - Clear user feedback for all GPS states: active, loading, denied, error, inactive
+  - Proximity sorting notification informing users when restaurants are sorted by distance
+  - Enhanced geolocation hook with configurable accuracy, timeout, and cache settings
+  - Consistent GPS integration across both add meal and edit meal forms
+
 ### Complete People Selection in Edit Dialog (v0.7.0)
 - **Problem**: Users could not manage people selection when editing existing meals
 - **Solution**: Implemented full people selection functionality in meal edit dialog matching add meal form
