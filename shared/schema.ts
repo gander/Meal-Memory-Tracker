@@ -29,7 +29,10 @@ export const meals = pgTable("meals", {
   id: serial("id").primaryKey(),
   restaurantId: integer("restaurant_id").references(() => restaurants.id),
   dishId: integer("dish_id").references(() => dishes.id),
-  photoUrl: text("photo_url"),
+  photoUrl: text("photo_url"), // Keep for backward compatibility during migration
+  imageData: text("image_data"), // QOI encoded image as base64 string
+  imageWidth: integer("image_width"),
+  imageHeight: integer("image_height"),
   price: decimal("price", { precision: 10, scale: 2 }),
   description: text("description"),
   portionSize: text("portion_size"), // gramatura
@@ -128,6 +131,8 @@ export type MealWithDetails = Meal & {
   dish?: Dish;
   people: Person[];
   portionSize?: string;
+  // Helper property for frontend image display
+  imageUrl?: string;
 };
 
 export type MealStats = {

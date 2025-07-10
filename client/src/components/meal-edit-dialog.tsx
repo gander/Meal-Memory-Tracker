@@ -204,10 +204,10 @@ export default function MealEditDialog({ meal, onUpdate }: MealEditDialogProps) 
               <h3 className="text-lg font-medium">Zdjęcie posiłku</h3>
               
               {/* Current Image Display */}
-              {meal.photoUrl && !hasImageToDelete && !newImagePreview && (
+              {meal.imageUrl && !hasImageToDelete && !newImagePreview && (
                 <div className="relative">
                   <img
-                    src={meal.photoUrl}
+                    src={meal.imageUrl}
                     alt="Aktualne zdjęcie posiłku"
                     className="w-full h-48 object-cover rounded-lg"
                   />
@@ -259,7 +259,7 @@ export default function MealEditDialog({ meal, onUpdate }: MealEditDialogProps) 
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>
-                        {meal.photoUrl && !hasImageToDelete ? "Zmień zdjęcie" : "Dodaj zdjęcie"}
+                        {meal.imageUrl && !hasImageToDelete ? "Zmień zdjęcie" : "Dodaj zdjęcie"}
                       </FormLabel>
                       <FormControl>
                         <FileUpload

@@ -38,16 +38,16 @@ export default function MealCard({ meal, onUpdate }: MealCardProps) {
   return (
     <Card className="overflow-hidden hover:shadow-md transition-shadow">
       <div className="md:flex">
-        {meal.photoUrl && (
+        {meal.imageUrl && (
           <div className="md:w-1/3">
             <img
-              src={meal.photoUrl}
+              src={meal.imageUrl}
               alt={meal.dish?.name || "Posiłek"}
               className="w-full h-48 md:h-full object-cover"
             />
           </div>
         )}
-        <CardContent className={`${meal.photoUrl ? "md:w-2/3" : "w-full"} p-6`}>
+        <CardContent className={`${meal.imageUrl ? "md:w-2/3" : "w-full"} p-6`}>
           <div className="flex justify-between items-start mb-4">
             <div className="flex-1">
               <h3 className="text-lg font-semibold text-secondary mb-1">

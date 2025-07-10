@@ -194,6 +194,9 @@ export class DatabaseStorage implements IStorage {
         restaurantId: meals.restaurantId,
         dishId: meals.dishId,
         photoUrl: meals.photoUrl,
+        imageData: meals.imageData,
+        imageWidth: meals.imageWidth,
+        imageHeight: meals.imageHeight,
         price: meals.price,
         description: meals.description,
         portionSize: meals.portionSize,
@@ -227,6 +230,8 @@ export class DatabaseStorage implements IStorage {
       restaurant: meal.restaurant || undefined,
       dish: meal.dish || undefined,
       people: mealPeopleResult.map(mp => mp.person).filter(Boolean) as Person[],
+      // Generate image URL based on whether we have QOI data or legacy photoUrl
+      imageUrl: meal.imageData ? `/api/images/${meal.id}` : meal.photoUrl || undefined,
     };
   }
 
@@ -244,6 +249,9 @@ export class DatabaseStorage implements IStorage {
         restaurantId: meals.restaurantId,
         dishId: meals.dishId,
         photoUrl: meals.photoUrl,
+        imageData: meals.imageData,
+        imageWidth: meals.imageWidth,
+        imageHeight: meals.imageHeight,
         price: meals.price,
         description: meals.description,
         portionSize: meals.portionSize,
@@ -318,6 +326,8 @@ export class DatabaseStorage implements IStorage {
           restaurant: meal.restaurant || undefined,
           dish: meal.dish || undefined,
           people: mealPeopleResult.map(mp => mp.person).filter(Boolean) as Person[],
+          // Generate image URL based on whether we have QOI data or legacy photoUrl
+          imageUrl: meal.imageData ? `/api/images/${meal.id}` : meal.photoUrl || undefined,
         };
       })
     );

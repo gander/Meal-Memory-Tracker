@@ -4,6 +4,7 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { insertMealSchema, insertRestaurantSchema, insertDishSchema, insertPersonSchema } from "@shared/schema";
 import { aiService } from "./services/openai";
+import { qoiImageService } from "./services/qoi-image";
 import multer from "multer";
 import path from "path";
 import fs from "fs";
@@ -50,8 +51,36 @@ const upload = multer({
 });
 
 export async function registerRoutes(app: Express): Promise<Server> {
-  // Serve uploaded files
+  // Serve uploaded files (for backward compatibility with existing photoUrl entries)
   app.use("/uploads", express.static("uploads"));
+  
+  // Serve QOI images from database
+  app.get("/api/images/:id", async (req, res) => {
+    try {
+      const mealId = parseInt(req.params.id);
+      const meal = await storage.getMeal(mealId);
+      
+      if (!meal || !meal.imageData) {
+        return res.status(404).json({ message: "Image not found" });
+      }
+      
+      const pngBuffer = await qoiImageService.convertQOIToWebFormat(
+        meal.imageData,
+        meal.imageWidth || 800,
+        meal.imageHeight || 600
+      );
+      
+      res.set({
+        'Content-Type': 'image/png',
+        'Cache-Control': 'public, max-age=31536000' // Cache for 1 year
+      });
+      
+      res.send(pngBuffer);
+    } catch (error) {
+      console.error("Error serving QOI image:", error);
+      res.status(500).json({ message: "Failed to serve image" });
+    }
+  });
 
   // Get meal statistics
   app.get("/api/stats", async (req, res) => {
@@ -103,19 +132,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
       let aiAnalysis: any = {};
 
       // Handle photo upload and AI analysis
+      let imageData: string | undefined;
+      let imageWidth: number | undefined;
+      let imageHeight: number | undefined;
+      
       if (req.file) {
-        photoUrl = `/uploads/${req.file.filename}`;
-        
         try {
-          // Convert image to base64 for AI analysis
+          // Convert image to base64 for AI analysis first
           const imageBuffer = fs.readFileSync(req.file.path);
           const base64Image = imageBuffer.toString("base64");
           
           // Get AI analysis of the image
           aiAnalysis = await aiService.analyzeMealPhoto(base64Image, req.body.description || "");
-        } catch (aiError) {
-          console.error("AI analysis failed:", aiError);
-          // Continue without AI analysis if it fails
+          
+          // Process image for QOI storage in database
+          const qoiResult = await qoiImageService.processImageForStorage(imageBuffer);
+          imageData = qoiResult.qoiData;
+          imageWidth = qoiResult.width;
+          imageHeight = qoiResult.height;
+          
+          // Clean up temporary file
+          await fs.promises.unlink(req.file.path);
+        } catch (processingError) {
+          console.error("Image processing failed:", processingError);
+          // Clean up temporary file on error
+          if (req.file?.path) {
+            await fs.promises.unlink(req.file.path).catch(() => {});
+          }
+          // Continue without image if processing fails
         }
       }
 
@@ -164,9 +208,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const mealData = {
         restaurantId,
         dishId,
-        photoUrl,
+        photoUrl, // Keep for backward compatibility
+        imageData,
+        imageWidth,
+        imageHeight,
         price: formData.price?.toString(),
         description: formData.description,
+        portionSize: req.body.portionSize,
         tasteRating: formData.tasteRating,
         presentationRating: formData.presentationRating,
         valueRating: formData.valueRating,
@@ -193,19 +241,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const id = parseInt(req.params.id);
       
-      // Get current meal to access old photo URL for cleanup
+      // Get current meal for reference
       const currentMeal = await storage.getMeal(id);
       
       let photoUrl: string | undefined;
+      let imageData: string | undefined;
+      let imageWidth: number | undefined;
+      let imageHeight: number | undefined;
       let shouldDeleteCurrentImage = false;
 
       // Handle new photo upload
       if (req.file) {
-        photoUrl = `/uploads/${req.file.filename}`;
-        
-        // If there's a new photo and an old photo exists, delete the old one
-        if (currentMeal?.photoUrl && currentMeal.photoUrl !== photoUrl) {
-          await safeDeleteFile(currentMeal.photoUrl);
+        try {
+          // Process image for QOI storage in database
+          const imageBuffer = fs.readFileSync(req.file.path);
+          const qoiResult = await qoiImageService.processImageForStorage(imageBuffer);
+          
+          imageData = qoiResult.qoiData;
+          imageWidth = qoiResult.width;
+          imageHeight = qoiResult.height;
+          
+          // Clean up temporary file
+          await fs.promises.unlink(req.file.path);
+          
+          // Clean up old file if it exists
+          if (currentMeal?.photoUrl) {
+            await safeDeleteFile(currentMeal.photoUrl);
+          }
+        } catch (processingError) {
+          console.error("Image processing failed:", processingError);
+          // Clean up temporary file on error
+          if (req.file?.path) {
+            await fs.promises.unlink(req.file.path).catch(() => {});
+          }
+          throw processingError;
         }
       }
 
@@ -213,8 +282,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (req.body.deleteImage === "true" && !req.file) {
         shouldDeleteCurrentImage = true;
         photoUrl = null; // Set to null to clear the photoUrl field
+        imageData = null; // Clear QOI data
+        imageWidth = null;
+        imageHeight = null;
         
-        // Delete the current image file
+        // Delete the current image file if it exists
         if (currentMeal?.photoUrl) {
           await safeDeleteFile(currentMeal.photoUrl);
         }
@@ -259,7 +331,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (restaurantId !== undefined) updateData.restaurantId = restaurantId;
       if (dishId !== undefined) updateData.dishId = dishId;
       if (photoUrl !== undefined) updateData.photoUrl = photoUrl;
-      if (shouldDeleteCurrentImage) updateData.photoUrl = null;
+      if (imageData !== undefined) updateData.imageData = imageData;
+      if (imageWidth !== undefined) updateData.imageWidth = imageWidth;
+      if (imageHeight !== undefined) updateData.imageHeight = imageHeight;
+      if (shouldDeleteCurrentImage) {
+        updateData.photoUrl = null;
+        updateData.imageData = null;
+        updateData.imageWidth = null;
+        updateData.imageHeight = null;
+      }
       if (formData.price !== undefined) updateData.price = formData.price.toString();
       if (formData.description !== undefined) updateData.description = formData.description;
       if (formData.portionSize !== undefined) updateData.portionSize = formData.portionSize;
