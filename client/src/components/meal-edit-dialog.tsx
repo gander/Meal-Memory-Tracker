@@ -3,7 +3,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { z } from "zod";
-import { Pencil, Save, X, Trash2, Camera, Upload, Check, ChevronsUpDown, Plus, MapPin, RefreshCw } from "lucide-react";
+import { Pencil, Save, X, Trash2, Camera, Upload, Check, ChevronsUpDown, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
@@ -20,8 +20,7 @@ import FileUpload from "@/components/ui/file-upload";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
-import { useGeolocation } from "@/hooks/use-geolocation";
-import { getDistanceToRestaurant } from "@/lib/distance";
+
 import type { MealWithDetails, Person, Restaurant } from "@shared/schema";
 
 const mealEditSchema = z.object({
@@ -56,12 +55,6 @@ export default function MealEditDialog({ meal, onUpdate }: MealEditDialogProps) 
   const [restaurantSearch, setRestaurantSearch] = useState("");
   const { toast } = useToast();
   const textCorrection = useTextCorrection();
-  const geolocation = useGeolocation({ 
-    enableHighAccuracy: true,
-    timeout: 15000,
-    maximumAge: 300000, // 5 minutes
-    autoRequest: false // Disable automatic GPS request to prevent browser freeze
-  });
 
   // Cleanup preview URL when component unmounts
   useEffect(() => {
@@ -264,36 +257,12 @@ export default function MealEditDialog({ meal, onUpdate }: MealEditDialogProps) 
     form.setValue("peopleNames", currentPeople.filter(p => p !== name));
   };
 
-  // Filter and sort restaurants by distance and name match
+  // Filter restaurants by name match
   const filteredRestaurants = restaurants
     .filter(restaurant =>
       restaurant.name.toLowerCase().includes(restaurantSearch.toLowerCase())
     )
-    .map(restaurant => {
-      const distanceInfo = geolocation.coordinates ? 
-        getDistanceToRestaurant(
-          geolocation.coordinates.latitude,
-          geolocation.coordinates.longitude,
-          restaurant.latitude,
-          restaurant.longitude
-        ) : null;
-      
-      return {
-        ...restaurant,
-        distanceInfo
-      };
-    })
-    .sort((a, b) => {
-      // Sort by distance if both restaurants have distance info
-      if (a.distanceInfo && b.distanceInfo) {
-        return a.distanceInfo.distance - b.distanceInfo.distance;
-      }
-      // Restaurants with distance info come first
-      if (a.distanceInfo && !b.distanceInfo) return -1;
-      if (!a.distanceInfo && b.distanceInfo) return 1;
-      // Fall back to alphabetical sorting
-      return a.name.localeCompare(b.name);
-    });
+    .sort((a, b) => a.name.localeCompare(b.name));
 
   const onSubmit = async (data: MealEditFormData) => {
     // Auto-correct description before submitting
@@ -317,48 +286,6 @@ export default function MealEditDialog({ meal, onUpdate }: MealEditDialogProps) 
         <DialogHeader>
           <DialogTitle>Edytuj posiłek</DialogTitle>
         </DialogHeader>
-        {/* GPS Status Indicator */}
-        <div className="mb-6 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <MapPin className={cn(
-                "h-4 w-4",
-                geolocation.permission === 'granted' && geolocation.coordinates ? "text-green-600" : 
-                geolocation.permission === 'denied' ? "text-red-600" : 
-                geolocation.loading ? "text-yellow-600" : "text-gray-600"
-              )} />
-              <span className="text-sm font-medium">
-                {geolocation.loading ? "Pobieranie lokalizacji..." :
-                 geolocation.permission === 'denied' ? "Dostęp do lokalizacji zablokowany" :
-                 geolocation.coordinates ? 
-                   `GPS aktywny (dokładność: ${Math.round(geolocation.coordinates.accuracy)}m)` :
-                   "GPS nieaktywny"
-                }
-              </span>
-            </div>
-            <Button
-              type="button"
-              size="sm"
-              variant="outline"
-              onClick={geolocation.requestLocation}
-              disabled={geolocation.loading}
-              className="flex items-center gap-1"
-            >
-              <RefreshCw className={cn("h-3 w-3", geolocation.loading && "animate-spin")} />
-              Odśwież
-            </Button>
-          </div>
-          {geolocation.coordinates && (
-            <div className="mt-2 text-xs text-blue-600">
-              Restauracje są sortowane według odległości od Twojej lokalizacji
-            </div>
-          )}
-          {geolocation.error && (
-            <div className="mt-2 text-xs text-red-600">
-              Błąd: {geolocation.error.message}
-            </div>
-          )}
-        </div>
 
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
@@ -529,11 +456,6 @@ export default function MealEditDialog({ meal, onUpdate }: MealEditDialogProps) 
                                     {restaurant.address && (
                                       <div className="text-xs text-muted-foreground">
                                         {restaurant.address}
-                                      </div>
-                                    )}
-                                    {restaurant.distanceInfo && (
-                                      <div className="text-xs text-blue-600">
-                                        📍 {restaurant.distanceInfo.formatted}
                                       </div>
                                     )}
                                   </div>

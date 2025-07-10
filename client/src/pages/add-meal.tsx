@@ -4,7 +4,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import { z } from "zod";
-import { ArrowLeft, Camera, Sparkles, Plus, Check, ChevronsUpDown, MapPin, RefreshCw } from "lucide-react";
+import { ArrowLeft, Camera, Sparkles, Plus, Check, ChevronsUpDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
@@ -18,11 +18,8 @@ import { queryClient } from "@/lib/queryClient";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
-import { useGeolocation } from "@/hooks/use-geolocation";
-import LocationPicker from "@/components/ui/location-picker";
 import { useTextCorrection } from "@/hooks/use-text-correction";
 import TextCorrectionIndicator from "@/components/ui/text-correction-indicator";
-import { getDistanceToRestaurant } from "@/lib/distance";
 import type { Restaurant, Person } from "@shared/schema";
 
 const mealFormSchema = z.object({
@@ -51,14 +48,7 @@ export default function AddMeal() {
   const [restaurantOpen, setRestaurantOpen] = useState(false);
   const [restaurantSearch, setRestaurantSearch] = useState("");
   const [isCreatingRestaurant, setIsCreatingRestaurant] = useState(false);
-  const [restaurantLocation, setRestaurantLocation] = useState<{latitude: string, longitude: string} | null>(null);
   const textCorrection = useTextCorrection();
-  const geolocation = useGeolocation({ 
-    enableHighAccuracy: true,
-    timeout: 15000,
-    maximumAge: 300000, // 5 minutes
-    autoRequest: false // Disable automatic GPS request to prevent browser freeze
-  });
 
   // Fetch restaurants for dropdown
   const { data: restaurants = [] } = useQuery<Restaurant[]>({
@@ -83,18 +73,10 @@ export default function AddMeal() {
   // Mutation to create new restaurant
   const createRestaurantMutation = useMutation({
     mutationFn: async (name: string) => {
-      const restaurantData: any = { name };
-      
-      // Add GPS coordinates if available
-      if (restaurantLocation) {
-        restaurantData.latitude = restaurantLocation.latitude;
-        restaurantData.longitude = restaurantLocation.longitude;
-      }
-      
       const response = await fetch("/api/restaurants", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(restaurantData),
+        body: JSON.stringify({ name }),
       });
       if (!response.ok) throw new Error("Failed to create restaurant");
       return response.json();
@@ -279,36 +261,12 @@ export default function AddMeal() {
     }
   };
 
-  // Filter and sort restaurants by distance and name match
+  // Filter restaurants by name match
   const filteredRestaurants = restaurants
     .filter(restaurant =>
       restaurant.name.toLowerCase().includes(restaurantSearch.toLowerCase())
     )
-    .map(restaurant => {
-      const distanceInfo = geolocation.coordinates ? 
-        getDistanceToRestaurant(
-          geolocation.coordinates.latitude,
-          geolocation.coordinates.longitude,
-          restaurant.latitude,
-          restaurant.longitude
-        ) : null;
-      
-      return {
-        ...restaurant,
-        distanceInfo
-      };
-    })
-    .sort((a, b) => {
-      // Sort by distance if both restaurants have distance info
-      if (a.distanceInfo && b.distanceInfo) {
-        return a.distanceInfo.distance - b.distanceInfo.distance;
-      }
-      // Restaurants with distance info come first
-      if (a.distanceInfo && !b.distanceInfo) return -1;
-      if (!a.distanceInfo && b.distanceInfo) return 1;
-      // Fall back to alphabetical sorting
-      return a.name.localeCompare(b.name);
-    });
+    .sort((a, b) => a.name.localeCompare(b.name)); // Alphabetical sorting
 
 
 
@@ -351,48 +309,7 @@ export default function AddMeal() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            {/* GPS Status Indicator */}
-            <div className="mb-6 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <MapPin className={cn(
-                    "h-4 w-4",
-                    geolocation.permission === 'granted' && geolocation.coordinates ? "text-green-600" : 
-                    geolocation.permission === 'denied' ? "text-red-600" : 
-                    geolocation.loading ? "text-yellow-600" : "text-gray-600"
-                  )} />
-                  <span className="text-sm font-medium">
-                    {geolocation.loading ? "Pobieranie lokalizacji..." :
-                     geolocation.permission === 'denied' ? "Dostęp do lokalizacji zablokowany" :
-                     geolocation.coordinates ? 
-                       `GPS aktywny (dokładność: ${Math.round(geolocation.coordinates.accuracy)}m)` :
-                       "GPS nieaktywny"
-                    }
-                  </span>
-                </div>
-                <Button
-                  type="button"
-                  size="sm"
-                  variant="outline"
-                  onClick={geolocation.requestLocation}
-                  disabled={geolocation.loading}
-                  className="flex items-center gap-1"
-                >
-                  <RefreshCw className={cn("h-3 w-3", geolocation.loading && "animate-spin")} />
-                  Odśwież
-                </Button>
-              </div>
-              {geolocation.coordinates && (
-                <div className="mt-2 text-xs text-blue-600">
-                  Restauracje są sortowane według odległości od Twojej lokalizacji
-                </div>
-              )}
-              {geolocation.error && (
-                <div className="mt-2 text-xs text-red-600">
-                  Błąd: {geolocation.error.message}
-                </div>
-              )}
-            </div>
+
 
             <Form {...form}>
               <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
@@ -522,11 +439,6 @@ export default function AddMeal() {
                                     />
                                     <div className="flex-1">
                                       <div className="font-medium">{restaurant.name}</div>
-                                      {restaurant.distanceInfo && (
-                                        <div className="text-xs text-muted-foreground">
-                                          📍 {restaurant.distanceInfo.formatted} stąd
-                                        </div>
-                                      )}
                                     </div>
                                   </CommandItem>
                                 ))}
@@ -552,17 +464,7 @@ export default function AddMeal() {
                   )}
                 />
 
-                {/* Location Picker for New Restaurant */}
-                {isCreatingRestaurant && (
-                  <div className="mt-4">
-                    <LocationPicker
-                      value={restaurantLocation}
-                      onChange={setRestaurantLocation}
-                      label="Lokalizacja nowej restauracji"
-                      allowManualEdit={true}
-                    />
-                  </div>
-                )}
+
 
                 {/* Price and Portion Size */}
                 <div className="grid grid-cols-2 gap-4">

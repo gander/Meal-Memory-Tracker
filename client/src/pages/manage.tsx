@@ -4,7 +4,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { ArrowLeft, Plus, Pencil, Trash2, Building, Utensils, Users } from "lucide-react";
-import LocationPicker from "@/components/ui/location-picker";
+
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
@@ -117,7 +117,7 @@ function EntityForm<T extends Record<string, any>>({
 function RestaurantManager() {
   const [editingRestaurant, setEditingRestaurant] = useState<any>(null);
   const [showForm, setShowForm] = useState(false);
-  const [restaurantLocation, setRestaurantLocation] = useState<{latitude: string, longitude: string} | null>(null);
+
   const { toast } = useToast();
 
   const { data: restaurants = [], isLoading } = useQuery({
@@ -163,37 +163,20 @@ function RestaurantManager() {
   });
 
   const handleSubmit = (data: RestaurantFormData) => {
-    // Include GPS coordinates from LocationPicker if available
-    const submitData = { ...data };
-    if (restaurantLocation) {
-      submitData.latitude = restaurantLocation.latitude;
-      submitData.longitude = restaurantLocation.longitude;
-    }
-    
     if (editingRestaurant) {
-      updateMutation.mutate({ id: editingRestaurant.id, data: submitData });
+      updateMutation.mutate({ id: editingRestaurant.id, data });
     } else {
-      createMutation.mutate(submitData);
+      createMutation.mutate(data);
     }
   };
 
-  // Update location picker when editing restaurant
   const handleEdit = (restaurant: any) => {
     setEditingRestaurant(restaurant);
-    if (restaurant.latitude && restaurant.longitude) {
-      setRestaurantLocation({
-        latitude: restaurant.latitude,
-        longitude: restaurant.longitude
-      });
-    } else {
-      setRestaurantLocation(null);
-    }
   };
 
   const handleCancel = () => {
     setShowForm(false);
     setEditingRestaurant(null);
-    setRestaurantLocation(null);
   };
 
   if (showForm || editingRestaurant) {
@@ -204,20 +187,12 @@ function RestaurantManager() {
           onSubmit={handleSubmit}
           onCancel={handleCancel}
           schema={restaurantSchema}
-          defaultValues={{ name: "", address: "", latitude: "", longitude: "" }}
+          defaultValues={{ name: "", address: "" }}
           title="lokal"
           fields={[
             { name: "name", label: "Nazwa", placeholder: "Nazwa lokalu..." },
             { name: "address", label: "Adres", placeholder: "Adres lokalu..." },
           ]}
-        />
-        
-        {/* GPS Location Picker */}
-        <LocationPicker
-          value={restaurantLocation}
-          onChange={setRestaurantLocation}
-          label="Lokalizacja GPS"
-          allowManualEdit={true}
         />
       </div>
     );
@@ -251,11 +226,7 @@ function RestaurantManager() {
                   {restaurant.address && (
                     <div className="text-sm text-muted-foreground">{restaurant.address}</div>
                   )}
-                  {restaurant.latitude && restaurant.longitude && (
-                    <div className="text-xs text-green-600">
-                      GPS: {parseFloat(restaurant.latitude).toFixed(4)}, {parseFloat(restaurant.longitude).toFixed(4)}
-                    </div>
-                  )}
+
                 </div>
                 <div className="flex gap-2">
                   <Button
