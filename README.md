@@ -2,7 +2,7 @@
 
 📱 A modern Polish AI-powered meal tracking application that transforms dining experiences into intelligent, interactive nutritional insights. Designed to make food journaling engaging, personalized, and effortless for food enthusiasts.
 
-🏷️ **Version 0.6.0** | 📋 **[View Changelog](CHANGELOG.md)** - See all version updates and new features
+📋 **[View Changelog](CHANGELOG.md)** - See all version updates and new features
 
 ## ✨ Features
 
