@@ -12,20 +12,29 @@ import { eq, desc, like, sql, and } from "drizzle-orm";
 export interface IStorage {
   // Restaurants
   getRestaurant(id: number): Promise<Restaurant | undefined>;
+  getRestaurants(): Promise<Restaurant[]>;
   getRestaurantByName(name: string): Promise<Restaurant | undefined>;
   createRestaurant(restaurant: InsertRestaurant): Promise<Restaurant>;
+  updateRestaurant(id: number, restaurant: Partial<InsertRestaurant>): Promise<Restaurant>;
+  deleteRestaurant(id: number): Promise<void>;
   searchRestaurants(query: string): Promise<Restaurant[]>;
 
   // Dishes
   getDish(id: number): Promise<Dish | undefined>;
+  getDishes(): Promise<Dish[]>;
   getDishByName(name: string): Promise<Dish | undefined>;
   createDish(dish: InsertDish): Promise<Dish>;
+  updateDish(id: number, dish: Partial<InsertDish>): Promise<Dish>;
+  deleteDish(id: number): Promise<void>;
   searchDishes(query: string): Promise<Dish[]>;
 
   // People
   getPerson(id: number): Promise<Person | undefined>;
+  getPeople(): Promise<Person[]>;
   getPersonByName(name: string): Promise<Person | undefined>;
   createPerson(person: InsertPerson): Promise<Person>;
+  updatePerson(id: number, person: Partial<InsertPerson>): Promise<Person>;
+  deletePerson(id: number): Promise<void>;
   searchPeople(query: string): Promise<Person[]>;
 
   // Meals
@@ -64,6 +73,23 @@ export class DatabaseStorage implements IStorage {
     return restaurant;
   }
 
+  async getRestaurants(): Promise<Restaurant[]> {
+    return await db.select().from(restaurants).orderBy(desc(restaurants.createdAt));
+  }
+
+  async updateRestaurant(id: number, updateData: Partial<InsertRestaurant>): Promise<Restaurant> {
+    const [restaurant] = await db
+      .update(restaurants)
+      .set(updateData)
+      .where(eq(restaurants.id, id))
+      .returning();
+    return restaurant;
+  }
+
+  async deleteRestaurant(id: number): Promise<void> {
+    await db.delete(restaurants).where(eq(restaurants.id, id));
+  }
+
   async searchRestaurants(query: string): Promise<Restaurant[]> {
     return await db
       .select()
@@ -91,6 +117,23 @@ export class DatabaseStorage implements IStorage {
     return dish;
   }
 
+  async getDishes(): Promise<Dish[]> {
+    return await db.select().from(dishes).orderBy(desc(dishes.createdAt));
+  }
+
+  async updateDish(id: number, updateData: Partial<InsertDish>): Promise<Dish> {
+    const [dish] = await db
+      .update(dishes)
+      .set(updateData)
+      .where(eq(dishes.id, id))
+      .returning();
+    return dish;
+  }
+
+  async deleteDish(id: number): Promise<void> {
+    await db.delete(dishes).where(eq(dishes.id, id));
+  }
+
   async searchDishes(query: string): Promise<Dish[]> {
     return await db
       .select()
@@ -116,6 +159,23 @@ export class DatabaseStorage implements IStorage {
       .values(insertPerson)
       .returning();
     return person;
+  }
+
+  async getPeople(): Promise<Person[]> {
+    return await db.select().from(people).orderBy(desc(people.createdAt));
+  }
+
+  async updatePerson(id: number, updateData: Partial<InsertPerson>): Promise<Person> {
+    const [person] = await db
+      .update(people)
+      .set(updateData)
+      .where(eq(people.id, id))
+      .returning();
+    return person;
+  }
+
+  async deletePerson(id: number): Promise<void> {
+    await db.delete(people).where(eq(people.id, id));
   }
 
   async searchPeople(query: string): Promise<Person[]> {

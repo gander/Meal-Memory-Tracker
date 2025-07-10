@@ -2,7 +2,7 @@ import type { Express } from "express";
 import express from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { insertMealSchema, insertRestaurantSchema, insertDishSchema } from "@shared/schema";
+import { insertMealSchema, insertRestaurantSchema, insertDishSchema, insertPersonSchema } from "@shared/schema";
 import { aiService } from "./services/openai";
 import multer from "multer";
 import path from "path";
@@ -284,6 +284,195 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error searching people:", error);
       res.status(500).json({ message: "Failed to search people" });
+    }
+  });
+
+  // CRUD for Restaurants
+  app.get("/api/restaurants", async (req, res) => {
+    try {
+      const restaurants = await storage.getRestaurants();
+      res.json(restaurants);
+    } catch (error) {
+      console.error("Error fetching restaurants:", error);
+      res.status(500).json({ message: "Failed to fetch restaurants" });
+    }
+  });
+
+  app.get("/api/restaurants/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const restaurant = await storage.getRestaurant(id);
+      if (!restaurant) {
+        return res.status(404).json({ message: "Restaurant not found" });
+      }
+      res.json(restaurant);
+    } catch (error) {
+      console.error("Error fetching restaurant:", error);
+      res.status(500).json({ message: "Failed to fetch restaurant" });
+    }
+  });
+
+  app.post("/api/restaurants", async (req, res) => {
+    try {
+      const validatedData = insertRestaurantSchema.parse(req.body);
+      const restaurant = await storage.createRestaurant(validatedData);
+      res.status(201).json(restaurant);
+    } catch (error) {
+      console.error("Error creating restaurant:", error);
+      res.status(400).json({ 
+        message: error instanceof Error ? error.message : "Failed to create restaurant" 
+      });
+    }
+  });
+
+  app.patch("/api/restaurants/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const validatedData = insertRestaurantSchema.partial().parse(req.body);
+      const restaurant = await storage.updateRestaurant(id, validatedData);
+      res.json(restaurant);
+    } catch (error) {
+      console.error("Error updating restaurant:", error);
+      res.status(400).json({ 
+        message: error instanceof Error ? error.message : "Failed to update restaurant" 
+      });
+    }
+  });
+
+  app.delete("/api/restaurants/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      await storage.deleteRestaurant(id);
+      res.status(204).send();
+    } catch (error) {
+      console.error("Error deleting restaurant:", error);
+      res.status(500).json({ message: "Failed to delete restaurant" });
+    }
+  });
+
+  // CRUD for Dishes
+  app.get("/api/dishes", async (req, res) => {
+    try {
+      const dishes = await storage.getDishes();
+      res.json(dishes);
+    } catch (error) {
+      console.error("Error fetching dishes:", error);
+      res.status(500).json({ message: "Failed to fetch dishes" });
+    }
+  });
+
+  app.get("/api/dishes/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const dish = await storage.getDish(id);
+      if (!dish) {
+        return res.status(404).json({ message: "Dish not found" });
+      }
+      res.json(dish);
+    } catch (error) {
+      console.error("Error fetching dish:", error);
+      res.status(500).json({ message: "Failed to fetch dish" });
+    }
+  });
+
+  app.post("/api/dishes", async (req, res) => {
+    try {
+      const validatedData = insertDishSchema.parse(req.body);
+      const dish = await storage.createDish(validatedData);
+      res.status(201).json(dish);
+    } catch (error) {
+      console.error("Error creating dish:", error);
+      res.status(400).json({ 
+        message: error instanceof Error ? error.message : "Failed to create dish" 
+      });
+    }
+  });
+
+  app.patch("/api/dishes/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const validatedData = insertDishSchema.partial().parse(req.body);
+      const dish = await storage.updateDish(id, validatedData);
+      res.json(dish);
+    } catch (error) {
+      console.error("Error updating dish:", error);
+      res.status(400).json({ 
+        message: error instanceof Error ? error.message : "Failed to update dish" 
+      });
+    }
+  });
+
+  app.delete("/api/dishes/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      await storage.deleteDish(id);
+      res.status(204).send();
+    } catch (error) {
+      console.error("Error deleting dish:", error);
+      res.status(500).json({ message: "Failed to delete dish" });
+    }
+  });
+
+  // CRUD for People
+  app.get("/api/people", async (req, res) => {
+    try {
+      const people = await storage.getPeople();
+      res.json(people);
+    } catch (error) {
+      console.error("Error fetching people:", error);
+      res.status(500).json({ message: "Failed to fetch people" });
+    }
+  });
+
+  app.get("/api/people/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const person = await storage.getPerson(id);
+      if (!person) {
+        return res.status(404).json({ message: "Person not found" });
+      }
+      res.json(person);
+    } catch (error) {
+      console.error("Error fetching person:", error);
+      res.status(500).json({ message: "Failed to fetch person" });
+    }
+  });
+
+  app.post("/api/people", async (req, res) => {
+    try {
+      const validatedData = insertPersonSchema.parse(req.body);
+      const person = await storage.createPerson(validatedData);
+      res.status(201).json(person);
+    } catch (error) {
+      console.error("Error creating person:", error);
+      res.status(400).json({ 
+        message: error instanceof Error ? error.message : "Failed to create person" 
+      });
+    }
+  });
+
+  app.patch("/api/people/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const validatedData = insertPersonSchema.partial().parse(req.body);
+      const person = await storage.updatePerson(id, validatedData);
+      res.json(person);
+    } catch (error) {
+      console.error("Error updating person:", error);
+      res.status(400).json({ 
+        message: error instanceof Error ? error.message : "Failed to update person" 
+      });
+    }
+  });
+
+  app.delete("/api/people/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      await storage.deletePerson(id);
+      res.status(204).send();
+    } catch (error) {
+      console.error("Error deleting person:", error);
+      res.status(500).json({ message: "Failed to delete person" });
     }
   });
 

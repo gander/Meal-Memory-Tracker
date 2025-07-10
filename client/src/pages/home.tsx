@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "wouter";
-import { Search, User, Utensils, Plus, Filter } from "lucide-react";
+import { Search, User, Utensils, Plus, Filter, Settings } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -43,6 +43,11 @@ export default function Home() {
               <h1 className="text-xl font-bold text-secondary">Co i gdzie jedliśmy?</h1>
             </div>
             <div className="flex items-center space-x-4">
+              <Link href="/manage">
+                <Button variant="ghost" size="icon" title="Zarządzanie danymi">
+                  <Settings className="h-5 w-5" />
+                </Button>
+              </Link>
               <Button variant="ghost" size="icon">
                 <Search className="h-5 w-5" />
               </Button>
