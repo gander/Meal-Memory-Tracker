@@ -9,6 +9,7 @@ This is a full-stack web application for tracking and rating meals at restaurant
 Preferred communication style: Simple, everyday language.
 Documentation language: English
 Author attribution: Adam Gąsowski
+Version management: Current version 0.1.0, update only when explicitly requested, maintain English changelog
 
 ## System Architecture
 
