@@ -49,15 +49,18 @@ export default function MealCard({ meal, onUpdate }: MealCardProps) {
         )}
         <CardContent className={`${meal.imageUrl ? "md:w-2/3" : "w-full"} p-6`}>
           <div className="flex justify-between items-start mb-4">
-            <div className="flex-1">
-              <h3 className="text-lg font-semibold text-secondary mb-1">
-                {meal.dish?.name || "Nieznane danie"}
-              </h3>
-              <div className="flex items-center text-neutral-600 text-sm">
-                <MapPin className="mr-1 h-3 w-3" />
-                <span>{meal.restaurant?.name || "Nieznany lokal"}</span>
-                <span className="mx-2">•</span>
-                <span>{formatDate(meal.createdAt!)}</span>
+            <div className="flex items-start space-x-3">
+              <MealEditDialog meal={meal} onUpdate={onUpdate} />
+              <div className="flex-1">
+                <h3 className="text-lg font-semibold text-secondary mb-1">
+                  {meal.dish?.name || "Nieznane danie"}
+                </h3>
+                <div className="flex items-center text-neutral-600 text-sm">
+                  <MapPin className="mr-1 h-3 w-3" />
+                  <span>{meal.restaurant?.name || "Nieznany lokal"}</span>
+                  <span className="mx-2">•</span>
+                  <span>{formatDate(meal.createdAt!)}</span>
+                </div>
               </div>
             </div>
             <div className="flex items-center space-x-2">
@@ -71,7 +74,6 @@ export default function MealCard({ meal, onUpdate }: MealCardProps) {
                   Chcę ponownie
                 </Badge>
               )}
-              <MealEditDialog meal={meal} onUpdate={onUpdate} />
             </div>
           </div>
 
