@@ -3,7 +3,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { z } from "zod";
-import { Pencil, Save, X, Trash2, Camera, Upload } from "lucide-react";
+import { Pencil, Save, X, Trash2, Camera, Upload, Check, ChevronsUpDown, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
@@ -17,7 +17,12 @@ import RatingSlider from "@/components/ui/rating-slider";
 import { Switch } from "@/components/ui/switch";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import FileUpload from "@/components/ui/file-upload";
-import type { MealWithDetails, Person } from "@shared/schema";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { cn } from "@/lib/utils";
+import { useGeolocation } from "@/hooks/use-geolocation";
+import { getDistanceToRestaurant } from "@/lib/distance";
+import type { MealWithDetails, Person, Restaurant } from "@shared/schema";
 
 const mealEditSchema = z.object({
   photo: z.any().optional(),
@@ -47,8 +52,11 @@ export default function MealEditDialog({ meal, onUpdate }: MealEditDialogProps) 
   const [newImagePreview, setNewImagePreview] = useState<string | null>(null);
   const [hasImageToDelete, setHasImageToDelete] = useState(false);
   const [newPersonName, setNewPersonName] = useState("");
+  const [restaurantOpen, setRestaurantOpen] = useState(false);
+  const [restaurantSearch, setRestaurantSearch] = useState("");
   const { toast } = useToast();
   const textCorrection = useTextCorrection();
+  const geolocation = useGeolocation();
 
   // Cleanup preview URL when component unmounts
   useEffect(() => {
@@ -65,6 +73,16 @@ export default function MealEditDialog({ meal, onUpdate }: MealEditDialogProps) 
     queryFn: async () => {
       const response = await fetch("/api/people");
       if (!response.ok) throw new Error("Failed to fetch people");
+      return response.json();
+    },
+  });
+
+  // Fetch restaurants for dropdown
+  const { data: restaurants = [] } = useQuery<Restaurant[]>({
+    queryKey: ["/api/restaurants"],
+    queryFn: async () => {
+      const response = await fetch("/api/restaurants");
+      if (!response.ok) throw new Error("Failed to fetch restaurants");
       return response.json();
     },
   });
@@ -241,6 +259,37 @@ export default function MealEditDialog({ meal, onUpdate }: MealEditDialogProps) 
     form.setValue("peopleNames", currentPeople.filter(p => p !== name));
   };
 
+  // Filter and sort restaurants by distance and name match
+  const filteredRestaurants = restaurants
+    .filter(restaurant =>
+      restaurant.name.toLowerCase().includes(restaurantSearch.toLowerCase())
+    )
+    .map(restaurant => {
+      const distanceInfo = geolocation.coordinates ? 
+        getDistanceToRestaurant(
+          geolocation.coordinates.latitude,
+          geolocation.coordinates.longitude,
+          restaurant.latitude,
+          restaurant.longitude
+        ) : null;
+      
+      return {
+        ...restaurant,
+        distanceInfo
+      };
+    })
+    .sort((a, b) => {
+      // Sort by distance if both restaurants have distance info
+      if (a.distanceInfo && b.distanceInfo) {
+        return a.distanceInfo.distance - b.distanceInfo.distance;
+      }
+      // Restaurants with distance info come first
+      if (a.distanceInfo && !b.distanceInfo) return -1;
+      if (!a.distanceInfo && b.distanceInfo) return 1;
+      // Fall back to alphabetical sorting
+      return a.name.localeCompare(b.name);
+    });
+
   const onSubmit = async (data: MealEditFormData) => {
     // Auto-correct description before submitting
     if (data.description && data.description.trim().length > 0) {
@@ -385,12 +434,68 @@ export default function MealEditDialog({ meal, onUpdate }: MealEditDialogProps) 
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Lokal</FormLabel>
-                    <FormControl>
-                      <Input
-                        placeholder="Wpisz nazwę lokalu..."
-                        {...field}
-                      />
-                    </FormControl>
+                    <Popover open={restaurantOpen} onOpenChange={setRestaurantOpen}>
+                      <PopoverTrigger asChild>
+                        <FormControl>
+                          <Button
+                            variant="outline"
+                            role="combobox"
+                            className={cn(
+                              "w-full justify-between",
+                              !field.value && "text-muted-foreground"
+                            )}
+                          >
+                            {field.value || "Wybierz lokal..."}
+                            <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                          </Button>
+                        </FormControl>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-full p-0">
+                        <Command>
+                          <CommandInput 
+                            placeholder="Szukaj lokalu..." 
+                            value={restaurantSearch}
+                            onValueChange={setRestaurantSearch}
+                          />
+                          <CommandList>
+                            <CommandEmpty>Nie znaleziono lokalu.</CommandEmpty>
+                            <CommandGroup>
+                              {filteredRestaurants.map((restaurant) => (
+                                <CommandItem
+                                  key={restaurant.id}
+                                  value={restaurant.name}
+                                  onSelect={() => {
+                                    field.onChange(restaurant.name);
+                                    setRestaurantOpen(false);
+                                    setRestaurantSearch("");
+                                  }}
+                                >
+                                  <Check
+                                    className={cn(
+                                      "mr-2 h-4 w-4",
+                                      field.value === restaurant.name ? "opacity-100" : "opacity-0"
+                                    )}
+                                  />
+                                  <div className="flex-1">
+                                    <div className="font-medium">{restaurant.name}</div>
+                                    {restaurant.address && (
+                                      <div className="text-xs text-muted-foreground">
+                                        {restaurant.address}
+                                      </div>
+                                    )}
+                                    {restaurant.distanceInfo && (
+                                      <div className="text-xs text-blue-600">
+                                        📍 {restaurant.distanceInfo.formatted}
+                                      </div>
+                                    )}
+                                  </div>
+                                </CommandItem>
+                              ))}
+                            </CommandGroup>
+                          </CommandList>
+                        </Command>
+                      </PopoverContent>
+                    </Popover>
                     <FormMessage />
                   </FormItem>
                 )}

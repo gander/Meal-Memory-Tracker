@@ -22,6 +22,7 @@ import { useGeolocation } from "@/hooks/use-geolocation";
 import LocationPicker from "@/components/ui/location-picker";
 import { useTextCorrection } from "@/hooks/use-text-correction";
 import TextCorrectionIndicator from "@/components/ui/text-correction-indicator";
+import { getDistanceToRestaurant } from "@/lib/distance";
 import type { Restaurant, Person } from "@shared/schema";
 
 const mealFormSchema = z.object({
@@ -52,6 +53,7 @@ export default function AddMeal() {
   const [isCreatingRestaurant, setIsCreatingRestaurant] = useState(false);
   const [restaurantLocation, setRestaurantLocation] = useState<{latitude: string, longitude: string} | null>(null);
   const textCorrection = useTextCorrection();
+  const geolocation = useGeolocation();
 
   // Fetch restaurants for dropdown
   const { data: restaurants = [] } = useQuery<Restaurant[]>({
@@ -272,9 +274,36 @@ export default function AddMeal() {
     }
   };
 
-  const filteredRestaurants = restaurants.filter(restaurant =>
-    restaurant.name.toLowerCase().includes(restaurantSearch.toLowerCase())
-  );
+  // Filter and sort restaurants by distance and name match
+  const filteredRestaurants = restaurants
+    .filter(restaurant =>
+      restaurant.name.toLowerCase().includes(restaurantSearch.toLowerCase())
+    )
+    .map(restaurant => {
+      const distanceInfo = geolocation.coordinates ? 
+        getDistanceToRestaurant(
+          geolocation.coordinates.latitude,
+          geolocation.coordinates.longitude,
+          restaurant.latitude,
+          restaurant.longitude
+        ) : null;
+      
+      return {
+        ...restaurant,
+        distanceInfo
+      };
+    })
+    .sort((a, b) => {
+      // Sort by distance if both restaurants have distance info
+      if (a.distanceInfo && b.distanceInfo) {
+        return a.distanceInfo.distance - b.distanceInfo.distance;
+      }
+      // Restaurants with distance info come first
+      if (a.distanceInfo && !b.distanceInfo) return -1;
+      if (!a.distanceInfo && b.distanceInfo) return 1;
+      // Fall back to alphabetical sorting
+      return a.name.localeCompare(b.name);
+    });
 
 
 
@@ -443,7 +472,14 @@ export default function AddMeal() {
                                           : "opacity-0"
                                       )}
                                     />
-                                    {restaurant.name}
+                                    <div className="flex-1">
+                                      <div className="font-medium">{restaurant.name}</div>
+                                      {restaurant.distanceInfo && (
+                                        <div className="text-xs text-muted-foreground">
+                                          📍 {restaurant.distanceInfo.formatted} stąd
+                                        </div>
+                                      )}
+                                    </div>
                                   </CommandItem>
                                 ))}
                                 {restaurantSearch && 
