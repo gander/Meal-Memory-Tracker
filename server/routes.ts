@@ -8,6 +8,32 @@ import multer from "multer";
 import path from "path";
 import fs from "fs";
 
+// Helper function for safe file deletion
+const safeDeleteFile = async (filePath: string): Promise<boolean> => {
+  try {
+    if (!filePath) return false;
+    
+    // Convert photoUrl to actual file path
+    const actualPath = filePath.startsWith('/uploads/') 
+      ? filePath.substring(1) // Remove leading slash
+      : filePath;
+    
+    // Check if file exists before attempting deletion
+    if (fs.existsSync(actualPath)) {
+      await fs.promises.unlink(actualPath);
+      console.log(`Successfully deleted file: ${actualPath}`);
+      return true;
+    } else {
+      console.log(`File not found (already deleted): ${actualPath}`);
+      return false;
+    }
+  } catch (error) {
+    console.error(`Error deleting file ${filePath}:`, error);
+    // Don't throw error - deletion should be resilient to missing files
+    return false;
+  }
+};
+
 // Configure multer for file uploads
 const upload = multer({
   dest: "uploads/",
@@ -167,9 +193,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const id = parseInt(req.params.id);
       
+      // Get current meal to access old photo URL for cleanup
+      const currentMeal = await storage.getMeal(id);
+      
       let photoUrl: string | undefined;
       if (req.file) {
         photoUrl = `/uploads/${req.file.filename}`;
+        
+        // If there's a new photo and an old photo exists, delete the old one
+        if (currentMeal?.photoUrl && currentMeal.photoUrl !== photoUrl) {
+          await safeDeleteFile(currentMeal.photoUrl);
+        }
       }
 
       const formData = {
@@ -236,7 +270,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.delete("/api/meals/:id", async (req, res) => {
     try {
       const id = parseInt(req.params.id);
+      
+      // Get meal details before deletion to access photo URL
+      const meal = await storage.getMeal(id);
+      
+      // Delete the meal from database
       await storage.deleteMeal(id);
+      
+      // Attempt to delete associated image file (resilient to missing files)
+      if (meal?.photoUrl) {
+        await safeDeleteFile(meal.photoUrl);
+      }
+      
       res.status(204).send();
     } catch (error) {
       console.error("Error deleting meal:", error);

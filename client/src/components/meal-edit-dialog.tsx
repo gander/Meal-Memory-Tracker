@@ -3,7 +3,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation } from "@tanstack/react-query";
 import { z } from "zod";
-import { Pencil, Save, X } from "lucide-react";
+import { Pencil, Save, X, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
@@ -13,6 +13,7 @@ import { useToast } from "@/hooks/use-toast";
 import { queryClient } from "@/lib/queryClient";
 import RatingSlider from "@/components/ui/rating-slider";
 import { Switch } from "@/components/ui/switch";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import type { MealWithDetails } from "@shared/schema";
 
 const mealEditSchema = z.object({
@@ -80,6 +81,7 @@ export default function MealEditDialog({ meal, onUpdate }: MealEditDialogProps) 
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/meals"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/stats"] });
       setOpen(false);
       onUpdate();
       toast({ title: "Posiłek został zaktualizowany" });
@@ -88,6 +90,35 @@ export default function MealEditDialog({ meal, onUpdate }: MealEditDialogProps) 
       toast({
         title: "Błąd",
         description: "Nie udało się zaktualizować posiłku",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: async () => {
+      const response = await fetch(`/api/meals/${meal.id}`, {
+        method: "DELETE",
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to delete meal");
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/meals"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/stats"] });
+      setOpen(false);
+      onUpdate();
+      toast({ 
+        title: "Posiłek został usunięty",
+        description: "Zdjęcie zostało również usunięte z serwera"
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Błąd",
+        description: "Nie udało się usunąć posiłku",
         variant: "destructive",
       });
     },
@@ -272,23 +303,59 @@ export default function MealEditDialog({ meal, onUpdate }: MealEditDialogProps) 
             </div>
 
             {/* Action Buttons */}
-            <div className="flex justify-end space-x-2 pt-4">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => setOpen(false)}
-                disabled={updateMutation.isPending}
-              >
-                <X className="h-4 w-4 mr-2" />
-                Anuluj
-              </Button>
-              <Button
-                type="submit"
-                disabled={updateMutation.isPending}
-              >
-                <Save className="h-4 w-4 mr-2" />
-                {updateMutation.isPending ? "Zapisywanie..." : "Zapisz"}
-              </Button>
+            <div className="flex justify-between pt-4">
+              {/* Delete Button */}
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button
+                    type="button"
+                    variant="destructive"
+                    disabled={updateMutation.isPending || deleteMutation.isPending}
+                  >
+                    <Trash2 className="h-4 w-4 mr-2" />
+                    Usuń
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Usuń posiłek</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      Czy na pewno chcesz usunąć ten posiłek? Ta operacja nie może być cofnięta. 
+                      Zdjęcie również zostanie usunięte z serwera.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Anuluj</AlertDialogCancel>
+                    <AlertDialogAction
+                      onClick={() => deleteMutation.mutate()}
+                      disabled={deleteMutation.isPending}
+                      className="bg-red-600 hover:bg-red-700"
+                    >
+                      {deleteMutation.isPending ? "Usuwanie..." : "Usuń"}
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+
+              {/* Save/Cancel Buttons */}
+              <div className="flex space-x-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setOpen(false)}
+                  disabled={updateMutation.isPending || deleteMutation.isPending}
+                >
+                  <X className="h-4 w-4 mr-2" />
+                  Anuluj
+                </Button>
+                <Button
+                  type="submit"
+                  disabled={updateMutation.isPending || deleteMutation.isPending}
+                >
+                  <Save className="h-4 w-4 mr-2" />
+                  {updateMutation.isPending ? "Zapisywanie..." : "Zapisz"}
+                </Button>
+              </div>
             </div>
           </form>
         </Form>

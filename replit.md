@@ -58,6 +58,8 @@ Version management: Current version 0.1.0, update only when explicitly requested
 - Local file storage in `/uploads` directory
 - Image validation and size limits (5MB max)
 - Static file serving for uploaded photos
+- Robust image deletion with resilience to missing files
+- Automatic cleanup when meals are deleted or photos replaced
 
 ## Data Flow
 
@@ -105,6 +107,25 @@ Version management: Current version 0.1.0, update only when explicitly requested
 - `DATABASE_URL`: PostgreSQL connection string
 - `OPENAI_API_KEY`: AI service authentication
 - `NODE_ENV`: Environment mode (development/production)
+
+## Recent Changes (December 2024)
+
+### Image Deletion Enhancement
+- **Problem**: Image files accumulated on server when meals were deleted or updated
+- **Solution**: Implemented robust file deletion with graceful handling of missing files
+- **Implementation**: Added `safeDeleteFile` helper function that checks file existence before deletion
+- **Features**: 
+  - Automatic image cleanup on meal deletion
+  - Old image removal when new images are uploaded
+  - Resilient to missing files (no errors thrown)
+  - User confirmation dialog for meal deletion
+  - Progress indicators for delete operations
+
+### Portion Size Field Integration
+- Added `portionSize` field to database schema and all related forms
+- Enhanced meal cards to display portion size with scale icon
+- Updated add-meal and edit-meal forms with gramatura input
+- Completed full CRUD integration across the application
 
 ## Key Architectural Decisions
 
