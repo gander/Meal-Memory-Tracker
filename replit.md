@@ -9,7 +9,7 @@ This is a full-stack web application for tracking and rating meals at restaurant
 Preferred communication style: Simple, everyday language.
 Documentation language: English
 Author attribution: Adam Gąsowski
-Version management: Current version 0.4.0, update only when explicitly requested, maintain English changelog
+Version management: Current version 0.5.0, update only when explicitly requested, maintain English changelog
 
 ## System Architecture
 
@@ -109,6 +109,18 @@ Version management: Current version 0.4.0, update only when explicitly requested
 - `NODE_ENV`: Environment mode (development/production)
 
 ## Recent Changes (January 2025)
+
+### Intelligent Text Correction System (v0.5.0)
+- **Problem**: Users entering descriptions with typos, missing diacritics, and poor formatting reduced data quality
+- **Solution**: Implemented AI-powered automatic text correction for Polish language descriptions
+- **Features**:
+  - Automatic correction of spelling errors, punctuation, and Polish diacritics
+  - Grammar improvements and contextual text fixes
+  - Visual correction indicator showing what changes were made
+  - Real-time correction during form submission without interrupting user workflow
+  - Categorized correction types (spelling, punctuation, diacritics, grammar)
+  - Graceful fallback to original text if correction service fails
+  - Integration in both add meal and edit meal forms
 
 ### Comprehensive GPS Integration (v0.4.0)
 - **Problem**: Users needed automatic location tracking for restaurants without complex manual entry

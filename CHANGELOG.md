@@ -5,6 +5,23 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.0] - 2025-01-10
+
+### Added
+- **AI-Powered Text Correction**: Automatic correction of Polish language descriptions for improved data quality
+  - Real-time spelling, punctuation, and diacritics correction
+  - Grammar improvements and contextual text fixes
+  - Visual indicator showing correction details with categorized changes
+  - Integration in both add meal and edit meal forms
+  - Graceful error handling with fallback to original text
+
+### Technical Implementation
+- New `/api/correct-text` endpoint for text correction processing
+- `useTextCorrection` hook for frontend text correction functionality
+- `TextCorrectionIndicator` component with Polish language labels
+- Enhanced OpenAI service with `correctDescription` method
+- Automatic text correction during form submission workflow
+
 ## [0.4.0] - 2025-01-10
 
 ### Added
