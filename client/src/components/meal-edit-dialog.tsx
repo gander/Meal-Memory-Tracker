@@ -17,7 +17,7 @@ import RatingSlider from "@/components/ui/rating-slider";
 import { Switch } from "@/components/ui/switch";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import FileUpload from "@/components/ui/file-upload";
-import type { MealWithDetails } from "@shared/schema";
+import type { MealWithDetails, Person } from "@shared/schema";
 
 const mealEditSchema = z.object({
   photo: z.any().optional(),
@@ -32,6 +32,7 @@ const mealEditSchema = z.object({
   serviceRating: z.number().min(-3).max(3),
   isExcellent: z.boolean(),
   wantAgain: z.boolean(),
+  peopleNames: z.array(z.string()).default([]),
 });
 
 type MealEditFormData = z.infer<typeof mealEditSchema>;
@@ -45,6 +46,7 @@ export default function MealEditDialog({ meal, onUpdate }: MealEditDialogProps) 
   const [open, setOpen] = useState(false);
   const [newImagePreview, setNewImagePreview] = useState<string | null>(null);
   const [hasImageToDelete, setHasImageToDelete] = useState(false);
+  const [newPersonName, setNewPersonName] = useState("");
   const { toast } = useToast();
   const textCorrection = useTextCorrection();
 
@@ -56,6 +58,16 @@ export default function MealEditDialog({ meal, onUpdate }: MealEditDialogProps) 
       }
     };
   }, [newImagePreview]);
+
+  // Fetch people for dropdown
+  const { data: people = [] } = useQuery<Person[]>({
+    queryKey: ["/api/people"],
+    queryFn: async () => {
+      const response = await fetch("/api/people");
+      if (!response.ok) throw new Error("Failed to fetch people");
+      return response.json();
+    },
+  });
 
   const form = useForm<MealEditFormData>({
     resolver: zodResolver(mealEditSchema),
@@ -72,6 +84,7 @@ export default function MealEditDialog({ meal, onUpdate }: MealEditDialogProps) 
       serviceRating: meal.serviceRating,
       isExcellent: meal.isExcellent || false,
       wantAgain: meal.wantAgain || false,
+      peopleNames: meal.people?.map(p => p.name) || [],
     },
   });
 
@@ -91,6 +104,7 @@ export default function MealEditDialog({ meal, onUpdate }: MealEditDialogProps) 
       formData.append("serviceRating", data.serviceRating.toString());
       formData.append("isExcellent", data.isExcellent.toString());
       formData.append("wantAgain", data.wantAgain.toString());
+      formData.append("peopleNames", JSON.stringify(data.peopleNames));
       
       // Flag to indicate image should be deleted
       if (hasImageToDelete && !data.photo) {
@@ -161,6 +175,36 @@ export default function MealEditDialog({ meal, onUpdate }: MealEditDialogProps) 
     },
   });
 
+  // Mutation to create new person
+  const createPersonMutation = useMutation({
+    mutationFn: async (name: string) => {
+      const response = await fetch("/api/people", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name }),
+      });
+      if (!response.ok) throw new Error("Failed to create person");
+      return response.json();
+    },
+    onSuccess: (newPerson) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/people"] });
+      // Add the new person to the current selection
+      const currentPeople = form.getValues("peopleNames");
+      form.setValue("peopleNames", [...currentPeople, newPerson.name]);
+      toast({
+        title: "Osoba dodana",
+        description: `${newPerson.name} została dodana do listy.`,
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Błąd",
+        description: "Nie udało się dodać osoby.",
+        variant: "destructive",
+      });
+    },
+  });
+
   const handleImageUpload = (file: File) => {
     form.setValue("photo", file);
     setNewImagePreview(URL.createObjectURL(file));
@@ -179,6 +223,22 @@ export default function MealEditDialog({ meal, onUpdate }: MealEditDialogProps) 
     }
     setNewImagePreview(null);
     form.setValue("photo", undefined);
+  };
+
+  const handleAddPerson = () => {
+    if (newPersonName.trim()) {
+      const currentPeople = form.getValues("peopleNames");
+      if (!currentPeople.includes(newPersonName.trim())) {
+        // Create the person in the database and add to form
+        createPersonMutation.mutate(newPersonName.trim());
+      }
+      setNewPersonName("");
+    }
+  };
+
+  const handleRemovePerson = (name: string) => {
+    const currentPeople = form.getValues("peopleNames");
+    form.setValue("peopleNames", currentPeople.filter(p => p !== name));
   };
 
   const onSubmit = async (data: MealEditFormData) => {
@@ -494,6 +554,76 @@ export default function MealEditDialog({ meal, onUpdate }: MealEditDialogProps) 
                     </FormItem>
                   )}
                 />
+              </div>
+            </div>
+
+            {/* People Selection */}
+            <div className="space-y-4">
+              <h3 className="text-lg font-medium">Kto jadł?</h3>
+              
+              {/* Display selected people */}
+              <div className="flex flex-wrap gap-2 mb-3">
+                {form.watch("peopleNames").map((name) => (
+                  <span key={name} className="bg-primary text-white px-3 py-1 rounded-full text-sm flex items-center">
+                    {name}
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="ml-2 h-auto p-0 text-white hover:text-neutral-200"
+                      onClick={() => handleRemovePerson(name)}
+                    >
+                      ×
+                    </Button>
+                  </span>
+                ))}
+              </div>
+
+              <div className="space-y-3">
+                {/* Select from existing people */}
+                <div>
+                  <label className="text-sm font-medium text-gray-700 block mb-2">
+                    Wybierz z listy
+                  </label>
+                  <div className="flex flex-wrap gap-2">
+                    {people.map((person) => (
+                      <Button
+                        key={person.id}
+                        type="button"
+                        variant={form.watch("peopleNames").includes(person.name) ? "default" : "outline"}
+                        size="sm"
+                        onClick={() => {
+                          const currentPeople = form.getValues("peopleNames");
+                          if (currentPeople.includes(person.name)) {
+                            form.setValue("peopleNames", currentPeople.filter(p => p !== person.name));
+                          } else {
+                            form.setValue("peopleNames", [...currentPeople, person.name]);
+                          }
+                        }}
+                      >
+                        {person.name}
+                      </Button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Add new person */}
+                <div>
+                  <label className="text-sm font-medium text-gray-700 block mb-2">
+                    Lub dodaj nową osobę
+                  </label>
+                  <div className="flex gap-2">
+                    <Input
+                      placeholder="Dodaj nową osobę..."
+                      value={newPersonName}
+                      onChange={(e) => setNewPersonName(e.target.value)}
+                      onKeyPress={(e) => e.key === "Enter" && (e.preventDefault(), handleAddPerson())}
+                    />
+                    <Button type="button" onClick={handleAddPerson} disabled={!newPersonName.trim()}>
+                      Dodaj
+                    </Button>
+                  </div>
+                </div>
               </div>
             </div>
 

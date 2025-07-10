@@ -22,7 +22,7 @@ import { useGeolocation } from "@/hooks/use-geolocation";
 import LocationPicker from "@/components/ui/location-picker";
 import { useTextCorrection } from "@/hooks/use-text-correction";
 import TextCorrectionIndicator from "@/components/ui/text-correction-indicator";
-import type { Restaurant } from "@shared/schema";
+import type { Restaurant, Person } from "@shared/schema";
 
 const mealFormSchema = z.object({
   photo: z.any().optional(),
@@ -37,7 +37,7 @@ const mealFormSchema = z.object({
   serviceRating: z.number().min(-3).max(3).default(0),
   isExcellent: z.boolean().default(false),
   wantAgain: z.boolean().default(false),
-  peopleNames: z.array(z.string()).default(["Ja"]),
+  peopleNames: z.array(z.string()).default([]),
 });
 
 type MealFormData = z.infer<typeof mealFormSchema>;
@@ -59,6 +59,16 @@ export default function AddMeal() {
     queryFn: async () => {
       const response = await fetch("/api/restaurants");
       if (!response.ok) throw new Error("Failed to fetch restaurants");
+      return response.json();
+    },
+  });
+
+  // Fetch people for dropdown
+  const { data: people = [] } = useQuery<Person[]>({
+    queryKey: ["/api/people"],
+    queryFn: async () => {
+      const response = await fetch("/api/people");
+      if (!response.ok) throw new Error("Failed to fetch people");
       return response.json();
     },
   });
@@ -101,6 +111,36 @@ export default function AddMeal() {
     },
   });
 
+  // Mutation to create new person
+  const createPersonMutation = useMutation({
+    mutationFn: async (name: string) => {
+      const response = await fetch("/api/people", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name }),
+      });
+      if (!response.ok) throw new Error("Failed to create person");
+      return response.json();
+    },
+    onSuccess: (newPerson) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/people"] });
+      // Add the new person to the current selection
+      const currentPeople = form.getValues("peopleNames");
+      form.setValue("peopleNames", [...currentPeople, newPerson.name]);
+      toast({
+        title: "Osoba dodana",
+        description: `${newPerson.name} została dodana do listy.`,
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Błąd",
+        description: "Nie udało się dodać osoby.",
+        variant: "destructive",
+      });
+    },
+  });
+
   const form = useForm<MealFormData>({
     resolver: zodResolver(mealFormSchema),
     defaultValues: {
@@ -110,7 +150,7 @@ export default function AddMeal() {
       serviceRating: 0,
       isExcellent: false,
       wantAgain: false,
-      peopleNames: ["Ja"],
+      peopleNames: [],
       description: "",
       restaurantName: "",
     },
@@ -213,7 +253,8 @@ export default function AddMeal() {
     if (newPersonName.trim()) {
       const currentPeople = form.getValues("peopleNames");
       if (!currentPeople.includes(newPersonName.trim())) {
-        form.setValue("peopleNames", [...currentPeople, newPersonName.trim()]);
+        // Create the person in the database and add to form
+        createPersonMutation.mutate(newPersonName.trim());
       }
       setNewPersonName("");
     }
@@ -489,30 +530,63 @@ export default function AddMeal() {
                     {form.watch("peopleNames").map((name) => (
                       <span key={name} className="bg-primary text-white px-3 py-1 rounded-full text-sm flex items-center">
                         {name}
-                        {name !== "Ja" && (
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="sm"
-                            className="ml-2 h-auto p-0 text-white hover:text-neutral-200"
-                            onClick={() => handleRemovePerson(name)}
-                          >
-                            ×
-                          </Button>
-                        )}
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          className="ml-2 h-auto p-0 text-white hover:text-neutral-200"
+                          onClick={() => handleRemovePerson(name)}
+                        >
+                          ×
+                        </Button>
                       </span>
                     ))}
                   </div>
-                  <div className="flex gap-2">
-                    <Input
-                      placeholder="Dodaj osobę..."
-                      value={newPersonName}
-                      onChange={(e) => setNewPersonName(e.target.value)}
-                      onKeyPress={(e) => e.key === "Enter" && (e.preventDefault(), handleAddPerson())}
-                    />
-                    <Button type="button" onClick={handleAddPerson} disabled={!newPersonName.trim()}>
-                      Dodaj
-                    </Button>
+                  <div className="space-y-3">
+                    {/* Select from existing people */}
+                    <div>
+                      <label className="text-sm font-medium text-gray-700 block mb-2">
+                        Wybierz z listy
+                      </label>
+                      <div className="flex flex-wrap gap-2">
+                        {people.map((person) => (
+                          <Button
+                            key={person.id}
+                            type="button"
+                            variant={form.watch("peopleNames").includes(person.name) ? "default" : "outline"}
+                            size="sm"
+                            onClick={() => {
+                              const currentPeople = form.getValues("peopleNames");
+                              if (currentPeople.includes(person.name)) {
+                                form.setValue("peopleNames", currentPeople.filter(p => p !== person.name));
+                              } else {
+                                form.setValue("peopleNames", [...currentPeople, person.name]);
+                              }
+                            }}
+                          >
+                            {person.name}
+                          </Button>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Add new person */}
+                    <div>
+                      <label className="text-sm font-medium text-gray-700 block mb-2">
+                        Lub dodaj nową osobę
+                      </label>
+                      <div className="flex gap-2">
+                        <Input
+                          placeholder="Dodaj nową osobę..."
+                          value={newPersonName}
+                          onChange={(e) => setNewPersonName(e.target.value)}
+                          onKeyPress={(e) => e.key === "Enter" && (e.preventDefault(), handleAddPerson())}
+                        />
+                        <Button type="button" onClick={handleAddPerson} disabled={!newPersonName.trim()}>
+                          Dodaj
+                        </Button>
+                      </div>
+                    </div>
                   </div>
                 </div>
 
