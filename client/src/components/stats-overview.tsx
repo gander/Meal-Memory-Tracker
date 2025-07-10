@@ -5,7 +5,12 @@ import type { MealStats } from "@shared/schema";
 export default function StatsOverview() {
   const { data: stats, isLoading } = useQuery<MealStats>({
     queryKey: ["/api/stats"],
+    staleTime: 0, // Force fresh data
+    cacheTime: 0, // Don't cache
   });
+
+  // Debug logging
+  console.log("Stats data:", stats);
 
   if (isLoading) {
     return (
@@ -51,7 +56,7 @@ export default function StatsOverview() {
       <Card>
         <CardContent className="p-4">
           <div className="text-2xl font-bold text-secondary">
-            {stats?.currentMonth || 0}
+            {stats?.currentMonth ?? 0}
           </div>
           <div className="text-sm text-neutral-600">W tym miesiącu</div>
         </CardContent>
