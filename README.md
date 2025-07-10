@@ -2,6 +2,8 @@
 
 A modern meal tracking application with AI-powered photo analysis and multi-dimensional rating system.
 
+📋 **[View Changelog](CHANGELOG.md)** - See all version updates and new features
+
 ## ✨ Features
 
 - 🤖 **AI Photo Analysis**: Upload meal photos and get automatic dish name and restaurant suggestions using OpenAI GPT-4o
