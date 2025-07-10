@@ -56,7 +56,8 @@ export default function AddMeal() {
   const geolocation = useGeolocation({ 
     enableHighAccuracy: true,
     timeout: 15000,
-    maximumAge: 300000 // 5 minutes
+    maximumAge: 300000, // 5 minutes
+    autoRequest: false // Disable automatic GPS request to prevent browser freeze
   });
 
   // Fetch restaurants for dropdown

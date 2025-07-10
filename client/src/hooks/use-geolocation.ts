@@ -110,7 +110,7 @@ export function useGeolocation(options: GeolocationOptions = {}) {
         } as GeolocationPositionError,
       }));
     }
-  }, [options]);
+  }, []);  // Remove options dependency to prevent infinite loop
 
   const clearLocation = useCallback(() => {
     setState({
@@ -121,12 +121,12 @@ export function useGeolocation(options: GeolocationOptions = {}) {
     });
   }, []);
 
-  // Auto-request location on mount
+  // Auto-request location on mount - only once
   useEffect(() => {
     if (autoRequest) {
       requestLocation();
     }
-  }, [autoRequest, requestLocation]);
+  }, []);  // Empty dependency array to run only once
 
   return {
     ...state,
