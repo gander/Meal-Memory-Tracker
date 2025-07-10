@@ -120,6 +120,8 @@ Version management: Never display version in README, update only when explicitly
   - Simplified restaurant selection to alphabetical sorting only
   - Cleaned up all GPS-related imports and dependencies
   - Removed location-based restaurant filtering and distance displays
+  - Deleted LocationPicker component and use-geolocation hooks
+  - Removed GPS-related state management from all components
   - Application now runs smoothly without GPS-related performance issues
 
 ### Complete People Selection in Edit Dialog (v0.7.0)

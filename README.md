@@ -16,13 +16,11 @@
 - **Dynamic Serving**: Images served through `/api/images/{id}` with automatic format conversion
 - **Fallback System**: Robust base64 fallback when QOI processing fails
 
-### 🌍 Advanced GPS Features
-- **Automatic Location Requests**: Forms automatically request current GPS coordinates on load
-- **Visual Status Indicators**: Color-coded GPS status with accuracy display and error messages
-- **Manual Refresh Controls**: One-click GPS refresh with loading animations and clear feedback
-- **Proximity Sorting**: Restaurants automatically sorted by distance when GPS is active
-- **Permission Management**: Smart handling of location permissions with user-friendly messaging
-- **Distance Calculations**: Real-time distance display to restaurants with formatted output
+### 🏪 Restaurant Management
+- **Simple Restaurant Selection**: Easy-to-use restaurant dropdown with alphabetical sorting
+- **Quick Restaurant Creation**: Add new restaurants directly from meal forms
+- **Searchable Interface**: Real-time restaurant search and filtering capabilities
+- **Manual Address Entry**: Traditional address input without location dependencies
 
 ### ⭐ Rating & Organization
 - **Multi-dimensional Ratings**: Rate meals from -3 to +3 across taste, presentation, value, and service
@@ -99,8 +97,8 @@
 - TanStack Query for intelligent caching and synchronization
 - Optimistic updates for smooth user experience
 - Background processing for AI analysis and text correction
-- Automatic GPS-based proximity sorting for efficient restaurant selection
-- Real-time location updates with configurable accuracy and timeout settings
+- Simplified restaurant selection interface for quick meal logging
+- Streamlined user experience focused on core meal tracking functionality
 
 ## 📄 License
 

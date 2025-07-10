@@ -5,6 +5,27 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.9.0] - 2025-01-10
+
+### Removed
+- **Complete GPS Functionality Removal**: Eliminated all GPS and location-based features from the application
+  - Removed automatic GPS coordinate requests and location detection
+  - Eliminated visual GPS status indicators and manual refresh controls  
+  - Removed proximity-based restaurant sorting and distance calculations
+  - Deleted LocationPicker component and geolocation hooks
+  - Simplified restaurant selection to alphabetical sorting only
+  - Cleaned up all GPS-related imports and dependencies
+
+### Fixed
+- **Performance Issues Resolved**: Complete elimination of GPS-related browser freezing and infinite loops
+- **Build Stability**: Removed GPS dependencies that caused compilation errors
+- **Application Reliability**: Restored smooth application performance without location services
+
+### Rationale
+- GPS functionality was causing severe browser performance issues and application freezing
+- Removed to prioritize application stability and user experience
+- Focus shifted to core meal tracking functionality without location dependencies
+
 ## [0.8.0] - 2025-01-10
 
 ### Added
