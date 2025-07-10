@@ -9,7 +9,7 @@ This is a full-stack web application for tracking and rating meals at restaurant
 Preferred communication style: Simple, everyday language.
 Documentation language: English
 Author attribution: Adam Gąsowski
-Version management: Current version 0.2.0, update only when explicitly requested, maintain English changelog
+Version management: Current version 0.3.0, update only when explicitly requested, maintain English changelog
 
 ## System Architecture
 
@@ -110,6 +110,25 @@ Version management: Current version 0.2.0, update only when explicitly requested
 
 ## Recent Changes (January 2025)
 
+### AI-Powered Dish Recognition (v0.3.0)
+- **Problem**: Manual dish name entry was time-consuming and error-prone
+- **Solution**: Implemented automatic dish detection from photos using AI
+- **Features**: 
+  - AI automatically fills dish names after photo upload
+  - Visual indicators with amber highlighting and sparkle icons
+  - Confidence-based suggestions with clear AI attribution
+  - Focused AI analysis only on food recognition, not restaurants
+
+### Geolocation Restaurant Selection (v0.3.0)
+- **Problem**: AI restaurant suggestions from images were inaccurate
+- **Solution**: Location-based restaurant suggestions using coordinates
+- **Implementation**: 
+  - Browser geolocation API integration
+  - Permission request with clear user feedback
+  - Infrastructure for nearby restaurant suggestions
+  - Searchable dropdown with real-time filtering
+  - Ability to create new restaurants on-the-fly
+
 ### Complete Image CRUD Implementation (v0.2.0)
 - **Problem**: Users needed comprehensive image management in meal editing
 - **Solution**: Implemented full CRUD operations for images within edit dialog
@@ -121,19 +140,10 @@ Version management: Current version 0.2.0, update only when explicitly requested
   - Memory management for blob URLs to prevent leaks
   - Resilient error handling for missing files
 
-### UI Layout Improvements
-- **Problem**: Edit button on meal cards collided with floating action button
-- **Solution**: Moved edit button from card bottom to header area
-- **Implementation**: 
-  - Repositioned edit button next to meal badges in header
-  - Added bottom padding (pb-24) to main content area
-  - Ensured proper spacing around floating action button
-  - Improved visual hierarchy and accessibility
-
-### Previous Changes (December 2024)
-- Image deletion enhancement with `safeDeleteFile` helper
-- Portion size field integration across all forms
-- Database schema updates for complete meal tracking
+### Previous Changes
+- UI layout improvements with button repositioning (v0.2.0)
+- Image deletion enhancement with `safeDeleteFile` helper (v0.1.0)
+- Portion size field integration across all forms (v0.1.0)
 
 ## Key Architectural Decisions
 
