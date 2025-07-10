@@ -9,7 +9,7 @@ This is a full-stack web application for tracking and rating meals at restaurant
 Preferred communication style: Simple, everyday language.
 Documentation language: English
 Author attribution: Adam Gąsowski
-Version management: Current version 0.1.0, update only when explicitly requested, maintain English changelog
+Version management: Current version 0.2.0, update only when explicitly requested, maintain English changelog
 
 ## System Architecture
 
@@ -108,24 +108,32 @@ Version management: Current version 0.1.0, update only when explicitly requested
 - `OPENAI_API_KEY`: AI service authentication
 - `NODE_ENV`: Environment mode (development/production)
 
-## Recent Changes (December 2024)
+## Recent Changes (January 2025)
 
-### Image Deletion Enhancement
-- **Problem**: Image files accumulated on server when meals were deleted or updated
-- **Solution**: Implemented robust file deletion with graceful handling of missing files
-- **Implementation**: Added `safeDeleteFile` helper function that checks file existence before deletion
+### Complete Image CRUD Implementation (v0.2.0)
+- **Problem**: Users needed comprehensive image management in meal editing
+- **Solution**: Implemented full CRUD operations for images within edit dialog
 - **Features**: 
-  - Automatic image cleanup on meal deletion
-  - Old image removal when new images are uploaded
-  - Resilient to missing files (no errors thrown)
-  - User confirmation dialog for meal deletion
-  - Progress indicators for delete operations
+  - View current meal photo in edit dialog
+  - Upload new photos with instant preview
+  - Delete existing photos with confirmation
+  - Replace photos with automatic old file cleanup
+  - Memory management for blob URLs to prevent leaks
+  - Resilient error handling for missing files
 
-### Portion Size Field Integration
-- Added `portionSize` field to database schema and all related forms
-- Enhanced meal cards to display portion size with scale icon
-- Updated add-meal and edit-meal forms with gramatura input
-- Completed full CRUD integration across the application
+### UI Layout Improvements
+- **Problem**: Edit button on meal cards collided with floating action button
+- **Solution**: Moved edit button from card bottom to header area
+- **Implementation**: 
+  - Repositioned edit button next to meal badges in header
+  - Added bottom padding (pb-24) to main content area
+  - Ensured proper spacing around floating action button
+  - Improved visual hierarchy and accessibility
+
+### Previous Changes (December 2024)
+- Image deletion enhancement with `safeDeleteFile` helper
+- Portion size field integration across all forms
+- Database schema updates for complete meal tracking
 
 ## Key Architectural Decisions
 
