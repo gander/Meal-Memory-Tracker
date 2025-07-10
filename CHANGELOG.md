@@ -5,6 +5,24 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.10.0] - 2025-01-10
+
+### Removed
+- **Monthly Statistics Block**: Removed problematic "W tym miesiącu" (this month) statistics display
+  - Eliminated the fourth statistics card that was causing display issues
+  - Simplified statistics overview to show only working metrics
+  - Updated layout from 4-column to 3-column grid for better presentation
+
+### Improved
+- **Statistics Layout**: Enhanced visual presentation with cleaner 3-column grid
+- **Component Reliability**: Removed debug code and cache overrides for better performance
+- **User Experience**: Focused on core metrics that work reliably (total meals, average rating, restaurants)
+
+### Technical Implementation
+- Updated `StatsOverview` component to display only functional statistics
+- Simplified grid layout for better responsive design
+- Cleaned up component code by removing temporary debugging elements
+
 ## [0.9.0] - 2025-01-10
 
 ### Removed

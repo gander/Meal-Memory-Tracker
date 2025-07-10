@@ -26,7 +26,7 @@
 - **Multi-dimensional Ratings**: Rate meals from -3 to +3 across taste, presentation, value, and service
 - **Smart Filtering**: Filter by excellence, "want again", rating levels, and search terms
 - **People Tracking**: Tag meal participants and track dining companions
-- **Statistics Dashboard**: Comprehensive dining trends and meal statistics
+- **Statistics Dashboard**: Clean overview showing total meals, average ratings, and restaurant count
 
 ### 🇵🇱 Polish Language Optimization
 - **Native Polish Support**: Optimized for Polish cuisine, restaurants, and descriptions

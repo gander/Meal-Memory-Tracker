@@ -111,6 +111,16 @@ Version management: Never display version in README, update only when explicitly
 
 ## Recent Changes (January 2025)
 
+### Statistics Simplification (v0.10.0)
+- **Problem**: The "W tym miesiącu" (this month) statistics block was not displaying values correctly
+- **Solution**: Removed the problematic monthly statistics and simplified the dashboard
+- **Changes**:
+  - Removed the fourth statistics card showing monthly meal count
+  - Updated layout from 4-column to 3-column grid for better presentation
+  - Cleaned up component code and removed debugging elements
+  - Focus on core metrics: total meals, average rating, and restaurant count
+  - Application now has a cleaner, more reliable statistics overview
+
 ### GPS Functionality Removal (v0.9.0)
 - **Problem**: GPS functionality was causing severe browser freezing and infinite loops, making the application unusable
 - **Solution**: Completely removed all GPS-related code from the application
