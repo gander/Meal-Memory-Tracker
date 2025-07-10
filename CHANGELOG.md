@@ -5,6 +5,34 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.0] - 2025-01-10
+
+### Added
+- **QOI Database Image Storage**: Efficient database storage system for meal photos using QOI format
+  - QOI (Quite OK Image Format) compression for faster encoding/decoding than traditional formats
+  - Direct database storage eliminating file system dependencies
+  - Automatic fallback to base64 when QOI processing fails
+  - Dynamic image serving through `/api/images/{id}` endpoint
+  - Optimized memory usage with proper Uint8Array handling
+  - Backward compatibility with existing image systems
+
+### Changed
+- Replaced file-based image storage with database storage for improved portability
+- Images now stored in `meals` table with `imageData`, `imageWidth`, and `imageHeight` fields
+- Image serving moved from static file serving to dynamic endpoint processing
+
+### Technical Implementation
+- New `QOIImageService` class for QOI encoding/decoding operations
+- Enhanced image upload processing with QOI conversion and base64 fallback
+- Updated storage layer to handle both QOI and legacy image formats
+- Improved error handling and debugging for image processing failures
+- Memory-efficient image processing with proper buffer management
+
+### Fixed
+- Resolved image display issues in frontend when QOI processing fails
+- Improved error handling for unsupported image formats
+- Fixed Uint8Array conversion issues for QOI encoding
+
 ## [0.5.0] - 2025-01-10
 
 ### Added

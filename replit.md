@@ -9,7 +9,7 @@ This is a full-stack web application for tracking and rating meals at restaurant
 Preferred communication style: Simple, everyday language.
 Documentation language: English
 Author attribution: Adam Gąsowski
-Version management: Current version 0.5.0, update only when explicitly requested, maintain English changelog
+Version management: Current version 0.6.0, update only when explicitly requested, maintain English changelog
 
 ## System Architecture
 
@@ -55,9 +55,10 @@ Version management: Current version 0.5.0, update only when explicitly requested
 - Polish language support for suggestions
 
 #### File Management
-- Local file storage in `/uploads` directory
+- QOI-format database image storage for efficient compression and fast processing
+- Base64 fallback system when QOI processing fails
 - Image validation and size limits (5MB max)
-- Static file serving for uploaded photos
+- Dynamic image serving via `/api/images/{id}` endpoint
 - Robust image deletion with resilience to missing files
 - Automatic cleanup when meals are deleted or photos replaced
 
@@ -109,6 +110,18 @@ Version management: Current version 0.5.0, update only when explicitly requested
 - `NODE_ENV`: Environment mode (development/production)
 
 ## Recent Changes (January 2025)
+
+### QOI Database Image Storage (v0.6.0)
+- **Problem**: File-based image storage was complex and not portable across environments
+- **Solution**: Implemented QOI (Quite OK Image Format) for efficient database storage of meal photos
+- **Features**:
+  - QOI-format compression for faster encoding/decoding than traditional formats
+  - Direct database storage eliminating file system dependencies
+  - Automatic fallback to base64 when QOI processing fails
+  - Dynamic image serving through `/api/images/{id}` endpoint
+  - Optimized memory usage with proper Uint8Array handling
+  - Backward compatibility with existing image systems
+  - Reduced deployment complexity by removing file storage requirements
 
 ### Intelligent Text Correction System (v0.5.0)
 - **Problem**: Users entering descriptions with typos, missing diacritics, and poor formatting reduced data quality
