@@ -4,6 +4,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { ArrowLeft, Plus, Pencil, Trash2, Building, Utensils, Users } from "lucide-react";
+import LocationPicker from "@/components/ui/location-picker";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
@@ -116,6 +117,7 @@ function EntityForm<T extends Record<string, any>>({
 function RestaurantManager() {
   const [editingRestaurant, setEditingRestaurant] = useState<any>(null);
   const [showForm, setShowForm] = useState(false);
+  const [restaurantLocation, setRestaurantLocation] = useState<{latitude: string, longitude: string} | null>(null);
   const { toast } = useToast();
 
   const { data: restaurants = [], isLoading } = useQuery({
@@ -161,32 +163,63 @@ function RestaurantManager() {
   });
 
   const handleSubmit = (data: RestaurantFormData) => {
-    if (editingRestaurant) {
-      updateMutation.mutate({ id: editingRestaurant.id, data });
-    } else {
-      createMutation.mutate(data);
+    // Include GPS coordinates from LocationPicker if available
+    const submitData = { ...data };
+    if (restaurantLocation) {
+      submitData.latitude = restaurantLocation.latitude;
+      submitData.longitude = restaurantLocation.longitude;
     }
+    
+    if (editingRestaurant) {
+      updateMutation.mutate({ id: editingRestaurant.id, data: submitData });
+    } else {
+      createMutation.mutate(submitData);
+    }
+  };
+
+  // Update location picker when editing restaurant
+  const handleEdit = (restaurant: any) => {
+    setEditingRestaurant(restaurant);
+    if (restaurant.latitude && restaurant.longitude) {
+      setRestaurantLocation({
+        latitude: restaurant.latitude,
+        longitude: restaurant.longitude
+      });
+    } else {
+      setRestaurantLocation(null);
+    }
+  };
+
+  const handleCancel = () => {
+    setShowForm(false);
+    setEditingRestaurant(null);
+    setRestaurantLocation(null);
   };
 
   if (showForm || editingRestaurant) {
     return (
-      <EntityForm
-        entity={editingRestaurant}
-        onSubmit={handleSubmit}
-        onCancel={() => {
-          setShowForm(false);
-          setEditingRestaurant(null);
-        }}
-        schema={restaurantSchema}
-        defaultValues={{ name: "", address: "", latitude: "", longitude: "" }}
-        title="lokal"
-        fields={[
-          { name: "name", label: "Nazwa", placeholder: "Nazwa lokalu..." },
-          { name: "address", label: "Adres", placeholder: "Adres lokalu..." },
-          { name: "latitude", label: "Szerokość geograficzna", placeholder: "np. 52.229676" },
-          { name: "longitude", label: "Długość geograficzna", placeholder: "np. 21.012229" },
-        ]}
-      />
+      <div className="space-y-6">
+        <EntityForm
+          entity={editingRestaurant}
+          onSubmit={handleSubmit}
+          onCancel={handleCancel}
+          schema={restaurantSchema}
+          defaultValues={{ name: "", address: "", latitude: "", longitude: "" }}
+          title="lokal"
+          fields={[
+            { name: "name", label: "Nazwa", placeholder: "Nazwa lokalu..." },
+            { name: "address", label: "Adres", placeholder: "Adres lokalu..." },
+          ]}
+        />
+        
+        {/* GPS Location Picker */}
+        <LocationPicker
+          value={restaurantLocation}
+          onChange={setRestaurantLocation}
+          label="Lokalizacja GPS"
+          allowManualEdit={true}
+        />
+      </div>
     );
   }
 
@@ -228,7 +261,7 @@ function RestaurantManager() {
                   <Button
                     size="sm"
                     variant="outline"
-                    onClick={() => setEditingRestaurant(restaurant)}
+                    onClick={() => handleEdit(restaurant)}
                   >
                     <Pencil className="h-4 w-4" />
                   </Button>

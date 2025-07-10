@@ -4,7 +4,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import { z } from "zod";
-import { ArrowLeft, Camera, Sparkles, Plus, Check, ChevronsUpDown, MapPin } from "lucide-react";
+import { ArrowLeft, Camera, Sparkles, Plus, Check, ChevronsUpDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
@@ -18,6 +18,8 @@ import { queryClient } from "@/lib/queryClient";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
+import { useGeolocation } from "@/hooks/use-geolocation";
+import LocationPicker from "@/components/ui/location-picker";
 import type { Restaurant } from "@shared/schema";
 
 const mealFormSchema = z.object({
@@ -46,8 +48,7 @@ export default function AddMeal() {
   const [restaurantOpen, setRestaurantOpen] = useState(false);
   const [restaurantSearch, setRestaurantSearch] = useState("");
   const [isCreatingRestaurant, setIsCreatingRestaurant] = useState(false);
-  const [userLocation, setUserLocation] = useState<{lat: number, lng: number} | null>(null);
-  const [locationPermission, setLocationPermission] = useState<'granted' | 'denied' | 'prompt'>('prompt');
+  const [restaurantLocation, setRestaurantLocation] = useState<{latitude: string, longitude: string} | null>(null);
 
   // Fetch restaurants for dropdown
   const { data: restaurants = [] } = useQuery<Restaurant[]>({
@@ -65,9 +66,9 @@ export default function AddMeal() {
       const restaurantData: any = { name };
       
       // Add GPS coordinates if available
-      if (userLocation) {
-        restaurantData.latitude = userLocation.lat.toString();
-        restaurantData.longitude = userLocation.lng.toString();
+      if (restaurantLocation) {
+        restaurantData.latitude = restaurantLocation.latitude;
+        restaurantData.longitude = restaurantLocation.longitude;
       }
       
       const response = await fetch("/api/restaurants", {
@@ -231,38 +232,7 @@ export default function AddMeal() {
     restaurant.name.toLowerCase().includes(restaurantSearch.toLowerCase())
   );
 
-  const requestLocation = () => {
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          setUserLocation({
-            lat: position.coords.latitude,
-            lng: position.coords.longitude
-          });
-          setLocationPermission('granted');
-          // Here you could implement logic to suggest nearby restaurants
-          toast({
-            title: "Lokalizacja pobrana",
-            description: "Możemy teraz sugerować najbliższe restauracje.",
-          });
-        },
-        (error) => {
-          setLocationPermission('denied');
-          toast({
-            title: "Brak dostępu do lokalizacji",
-            description: "Nie możemy sugerować najbliższych restauracji.",
-            variant: "destructive",
-          });
-        }
-      );
-    } else {
-      toast({
-        title: "Geolokalizacja niedostępna",
-        description: "Twoja przeglądarka nie obsługuje geolokalizacji.",
-        variant: "destructive",
-      });
-    }
-  };
+
 
   const onSubmit = (data: MealFormData) => {
     createMealMutation.mutate(data);
@@ -326,27 +296,7 @@ export default function AddMeal() {
                   name="restaurantName"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="flex items-center justify-between">
-                        Lokal
-                        {locationPermission === 'prompt' && (
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="sm"
-                            onClick={requestLocation}
-                            className="h-auto p-1 text-xs text-muted-foreground hover:text-primary"
-                          >
-                            <MapPin className="h-3 w-3 mr-1" />
-                            Użyj lokalizacji
-                          </Button>
-                        )}
-                        {locationPermission === 'granted' && userLocation && (
-                          <span className="text-xs text-green-600 flex items-center">
-                            <MapPin className="h-3 w-3 mr-1" />
-                            Lokalizacja aktywna
-                          </span>
-                        )}
-                      </FormLabel>
+                      <FormLabel>Lokal</FormLabel>
                       <Popover open={restaurantOpen} onOpenChange={setRestaurantOpen}>
                         <PopoverTrigger asChild>
                           <FormControl>
@@ -433,6 +383,18 @@ export default function AddMeal() {
                     </FormItem>
                   )}
                 />
+
+                {/* Location Picker for New Restaurant */}
+                {isCreatingRestaurant && (
+                  <div className="mt-4">
+                    <LocationPicker
+                      value={restaurantLocation}
+                      onChange={setRestaurantLocation}
+                      label="Lokalizacja nowej restauracji"
+                      allowManualEdit={true}
+                    />
+                  </div>
+                )}
 
                 {/* Dish Name - AI Detected */}
                 <FormField
