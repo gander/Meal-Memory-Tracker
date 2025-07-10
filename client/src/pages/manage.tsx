@@ -18,6 +18,8 @@ import { useLocation } from "wouter";
 const restaurantSchema = z.object({
   name: z.string().min(1, "Nazwa jest wymagana"),
   address: z.string().optional(),
+  latitude: z.string().optional(),
+  longitude: z.string().optional(),
 });
 
 const dishSchema = z.object({
@@ -176,11 +178,13 @@ function RestaurantManager() {
           setEditingRestaurant(null);
         }}
         schema={restaurantSchema}
-        defaultValues={{ name: "", address: "" }}
+        defaultValues={{ name: "", address: "", latitude: "", longitude: "" }}
         title="lokal"
         fields={[
           { name: "name", label: "Nazwa", placeholder: "Nazwa lokalu..." },
           { name: "address", label: "Adres", placeholder: "Adres lokalu..." },
+          { name: "latitude", label: "Szerokość geograficzna", placeholder: "np. 52.229676" },
+          { name: "longitude", label: "Długość geograficzna", placeholder: "np. 21.012229" },
         ]}
       />
     );
@@ -213,6 +217,11 @@ function RestaurantManager() {
                   <div className="font-medium">{restaurant.name}</div>
                   {restaurant.address && (
                     <div className="text-sm text-muted-foreground">{restaurant.address}</div>
+                  )}
+                  {restaurant.latitude && restaurant.longitude && (
+                    <div className="text-xs text-green-600">
+                      GPS: {parseFloat(restaurant.latitude).toFixed(4)}, {parseFloat(restaurant.longitude).toFixed(4)}
+                    </div>
                   )}
                 </div>
                 <div className="flex gap-2">

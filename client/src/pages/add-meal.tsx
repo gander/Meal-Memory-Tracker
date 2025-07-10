@@ -62,10 +62,18 @@ export default function AddMeal() {
   // Mutation to create new restaurant
   const createRestaurantMutation = useMutation({
     mutationFn: async (name: string) => {
+      const restaurantData: any = { name };
+      
+      // Add GPS coordinates if available
+      if (userLocation) {
+        restaurantData.latitude = userLocation.lat.toString();
+        restaurantData.longitude = userLocation.lng.toString();
+      }
+      
       const response = await fetch("/api/restaurants", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name }),
+        body: JSON.stringify(restaurantData),
       });
       if (!response.ok) throw new Error("Failed to create restaurant");
       return response.json();

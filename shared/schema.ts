@@ -7,6 +7,8 @@ export const restaurants = pgTable("restaurants", {
   id: serial("id").primaryKey(),
   name: text("name").notNull(),
   address: text("address"),
+  latitude: decimal("latitude", { precision: 10, scale: 8 }),
+  longitude: decimal("longitude", { precision: 11, scale: 8 }),
   createdAt: timestamp("created_at").defaultNow(),
 });
 
