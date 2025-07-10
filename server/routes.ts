@@ -197,11 +197,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const currentMeal = await storage.getMeal(id);
       
       let photoUrl: string | undefined;
+      let shouldDeleteCurrentImage = false;
+
+      // Handle new photo upload
       if (req.file) {
         photoUrl = `/uploads/${req.file.filename}`;
         
         // If there's a new photo and an old photo exists, delete the old one
         if (currentMeal?.photoUrl && currentMeal.photoUrl !== photoUrl) {
+          await safeDeleteFile(currentMeal.photoUrl);
+        }
+      }
+
+      // Handle explicit image deletion request
+      if (req.body.deleteImage === "true" && !req.file) {
+        shouldDeleteCurrentImage = true;
+        photoUrl = null; // Set to null to clear the photoUrl field
+        
+        // Delete the current image file
+        if (currentMeal?.photoUrl) {
           await safeDeleteFile(currentMeal.photoUrl);
         }
       }
@@ -245,6 +259,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (restaurantId !== undefined) updateData.restaurantId = restaurantId;
       if (dishId !== undefined) updateData.dishId = dishId;
       if (photoUrl !== undefined) updateData.photoUrl = photoUrl;
+      if (shouldDeleteCurrentImage) updateData.photoUrl = null;
       if (formData.price !== undefined) updateData.price = formData.price.toString();
       if (formData.description !== undefined) updateData.description = formData.description;
       if (formData.portionSize !== undefined) updateData.portionSize = formData.portionSize;

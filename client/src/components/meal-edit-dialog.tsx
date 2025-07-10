@@ -1,9 +1,9 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation } from "@tanstack/react-query";
 import { z } from "zod";
-import { Pencil, Save, X, Trash2 } from "lucide-react";
+import { Pencil, Save, X, Trash2, Camera, Upload } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
@@ -14,9 +14,11 @@ import { queryClient } from "@/lib/queryClient";
 import RatingSlider from "@/components/ui/rating-slider";
 import { Switch } from "@/components/ui/switch";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import FileUpload from "@/components/ui/file-upload";
 import type { MealWithDetails } from "@shared/schema";
 
 const mealEditSchema = z.object({
+  photo: z.any().optional(),
   description: z.string().optional(),
   price: z.string().optional(),
   portionSize: z.string().optional(),
@@ -37,11 +39,23 @@ interface MealEditDialogProps {
 
 export default function MealEditDialog({ meal, onUpdate }: MealEditDialogProps) {
   const [open, setOpen] = useState(false);
+  const [newImagePreview, setNewImagePreview] = useState<string | null>(null);
+  const [hasImageToDelete, setHasImageToDelete] = useState(false);
   const { toast } = useToast();
+
+  // Cleanup preview URL when component unmounts
+  useEffect(() => {
+    return () => {
+      if (newImagePreview && newImagePreview.startsWith('blob:')) {
+        URL.revokeObjectURL(newImagePreview);
+      }
+    };
+  }, [newImagePreview]);
 
   const form = useForm<MealEditFormData>({
     resolver: zodResolver(mealEditSchema),
     defaultValues: {
+      photo: undefined,
       description: meal.description || "",
       price: meal.price || "",
       portionSize: meal.portionSize || "",
@@ -58,6 +72,7 @@ export default function MealEditDialog({ meal, onUpdate }: MealEditDialogProps) 
     mutationFn: async (data: MealEditFormData) => {
       const formData = new FormData();
       
+      if (data.photo) formData.append("photo", data.photo);
       if (data.description) formData.append("description", data.description);
       if (data.price) formData.append("price", data.price);
       if (data.portionSize) formData.append("portionSize", data.portionSize);
@@ -67,6 +82,11 @@ export default function MealEditDialog({ meal, onUpdate }: MealEditDialogProps) 
       formData.append("serviceRating", data.serviceRating.toString());
       formData.append("isExcellent", data.isExcellent.toString());
       formData.append("wantAgain", data.wantAgain.toString());
+      
+      // Flag to indicate image should be deleted
+      if (hasImageToDelete && !data.photo) {
+        formData.append("deleteImage", "true");
+      }
 
       const response = await fetch(`/api/meals/${meal.id}`, {
         method: "PATCH",
@@ -82,6 +102,14 @@ export default function MealEditDialog({ meal, onUpdate }: MealEditDialogProps) 
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/meals"] });
       queryClient.invalidateQueries({ queryKey: ["/api/stats"] });
+      
+      // Cleanup state
+      if (newImagePreview && newImagePreview.startsWith('blob:')) {
+        URL.revokeObjectURL(newImagePreview);
+      }
+      setNewImagePreview(null);
+      setHasImageToDelete(false);
+      
       setOpen(false);
       onUpdate();
       toast({ title: "Posiłek został zaktualizowany" });
@@ -124,6 +152,26 @@ export default function MealEditDialog({ meal, onUpdate }: MealEditDialogProps) 
     },
   });
 
+  const handleImageUpload = (file: File) => {
+    form.setValue("photo", file);
+    setNewImagePreview(URL.createObjectURL(file));
+    setHasImageToDelete(false);
+  };
+
+  const handleRemoveCurrentImage = () => {
+    setHasImageToDelete(true);
+    setNewImagePreview(null);
+    form.setValue("photo", undefined);
+  };
+
+  const handleRemoveNewImage = () => {
+    if (newImagePreview && newImagePreview.startsWith('blob:')) {
+      URL.revokeObjectURL(newImagePreview);
+    }
+    setNewImagePreview(null);
+    form.setValue("photo", undefined);
+  };
+
   const onSubmit = (data: MealEditFormData) => {
     updateMutation.mutate(data);
   };
@@ -142,6 +190,99 @@ export default function MealEditDialog({ meal, onUpdate }: MealEditDialogProps) 
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+            {/* Image Management */}
+            <div className="space-y-4">
+              <h3 className="text-lg font-medium">Zdjęcie posiłku</h3>
+              
+              {/* Current Image Display */}
+              {meal.photoUrl && !hasImageToDelete && !newImagePreview && (
+                <div className="relative">
+                  <img
+                    src={meal.photoUrl}
+                    alt="Aktualne zdjęcie posiłku"
+                    className="w-full h-48 object-cover rounded-lg"
+                  />
+                  <div className="absolute top-2 right-2 space-x-2">
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="destructive"
+                      onClick={handleRemoveCurrentImage}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                  <div className="mt-2 text-sm text-neutral-600">
+                    Aktualne zdjęcie
+                  </div>
+                </div>
+              )}
+
+              {/* New Image Preview */}
+              {newImagePreview && (
+                <div className="relative">
+                  <img
+                    src={newImagePreview}
+                    alt="Nowe zdjęcie posiłku"
+                    className="w-full h-48 object-cover rounded-lg"
+                  />
+                  <div className="absolute top-2 right-2">
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="destructive"
+                      onClick={handleRemoveNewImage}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                  <div className="mt-2 text-sm text-green-600 font-medium">
+                    Nowe zdjęcie (zostanie zapisane po zatwierdzeniu)
+                  </div>
+                </div>
+              )}
+
+              {/* Upload New Image */}
+              {!newImagePreview && (
+                <FormField
+                  control={form.control}
+                  name="photo"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>
+                        {meal.photoUrl && !hasImageToDelete ? "Zmień zdjęcie" : "Dodaj zdjęcie"}
+                      </FormLabel>
+                      <FormControl>
+                        <FileUpload
+                          onFileSelect={handleImageUpload}
+                          isAnalyzing={false}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              )}
+
+              {/* Message when image marked for deletion */}
+              {hasImageToDelete && !newImagePreview && (
+                <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
+                  <div className="text-sm text-red-700">
+                    Zdjęcie zostanie usunięte po zatwierdzeniu zmian
+                  </div>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    className="mt-2"
+                    onClick={() => setHasImageToDelete(false)}
+                  >
+                    Anuluj usuwanie
+                  </Button>
+                </div>
+              )}
+            </div>
+
             {/* Basic Information */}
             <div className="space-y-4">
               <h3 className="text-lg font-medium">Podstawowe informacje</h3>
