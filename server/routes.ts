@@ -722,7 +722,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         exportInfo: {
           exportDate: new Date().toISOString(),
           applicationName: "Co i gdzie jedliśmy?",
-          version: "0.10.0",
+          version: "1.0.0",
           totalMeals: meals.length,
           totalRestaurants: restaurants.length,
           totalDishes: dishes.length,
@@ -780,7 +780,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
 ## Informacje o eksporcie
 - Data eksportu: ${new Date().toLocaleString('pl-PL')}
-- Wersja aplikacji: 0.10.0
+- Wersja aplikacji: 1.0.0
 - Łączna liczba posiłków: ${meals.length}
 - Łączna liczba restauracji: ${restaurants.length}
 - Łączna liczba dań: ${dishes.length}

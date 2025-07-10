@@ -111,6 +111,20 @@ Version management: Never display version in README, update only when explicitly
 
 ## Recent Changes (January 2025)
 
+### 🎉 Production Release (v1.0.0)
+- **Achievement**: Application has reached production-ready status with comprehensive feature set
+- **Complete Data Export System**: Full data export functionality with ZIP archiving
+  - Export all meals, restaurants, dishes, people, and statistics to ZIP archive
+  - Images exported in PNG format with organized folder structure
+  - Comprehensive README file included in export with data structure documentation
+  - Professional ZIP file naming with timestamp
+- **Header Simplification**: Cleaned up application header for better focus
+  - Removed search icon (magnifying glass) from header navigation
+  - Removed user icon from header navigation
+  - Streamlined header to show only essential elements: logo, title, and settings
+- **Technical Implementation**: Added `/api/export` endpoint with archiver package integration
+- **Professional Features**: The application now provides enterprise-level data management capabilities
+
 ### Statistics Simplification (v0.10.0)
 - **Problem**: The "W tym miesiącu" (this month) statistics block was not displaying values correctly
 - **Solution**: Removed the problematic monthly statistics and simplified the dashboard

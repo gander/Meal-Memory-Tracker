@@ -16,17 +16,20 @@
 - **Dynamic Serving**: Images served through `/api/images/{id}` with automatic format conversion
 - **Fallback System**: Robust base64 fallback when QOI processing fails
 
-### 🏪 Restaurant Management
+### 🏪 Restaurant & Data Management
 - **Simple Restaurant Selection**: Easy-to-use restaurant dropdown with alphabetical sorting
 - **Quick Restaurant Creation**: Add new restaurants directly from meal forms
 - **Searchable Interface**: Real-time restaurant search and filtering capabilities
 - **Manual Address Entry**: Traditional address input without location dependencies
+- **Complete Data Export**: Export all data to ZIP archive with images and comprehensive documentation
 
 ### ⭐ Rating & Organization
 - **Multi-dimensional Ratings**: Rate meals from -3 to +3 across taste, presentation, value, and service
 - **Smart Filtering**: Filter by excellence, "want again", rating levels, and search terms
 - **People Tracking**: Tag meal participants and track dining companions
 - **Statistics Dashboard**: Clean overview showing total meals, average ratings, and restaurant count
+- **Data Management**: Comprehensive CRUD operations for restaurants, dishes, and people
+- **Professional Export**: Complete data backup with organized ZIP archives
 
 ### 🇵🇱 Polish Language Optimization
 - **Native Polish Support**: Optimized for Polish cuisine, restaurants, and descriptions
