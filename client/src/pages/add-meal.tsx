@@ -18,10 +18,10 @@ import { queryClient } from "@/lib/queryClient";
 
 const mealFormSchema = z.object({
   photo: z.any().optional(),
-  restaurantName: z.string().min(1, "Nazwa lokalu jest wymagana"),
+  restaurantName: z.string().optional(),
   dishName: z.string().optional(),
   price: z.string().optional(),
-  description: z.string().min(1, "Opis jest wymagany"),
+  description: z.string().optional(),
   tasteRating: z.number().min(-3).max(3).default(0),
   presentationRating: z.number().min(-3).max(3).default(0),
   valueRating: z.number().min(-3).max(3).default(0),
@@ -200,7 +200,7 @@ export default function AddMeal() {
                   name="photo"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Zdjęcie posiłku *</FormLabel>
+                      <FormLabel>Zdjęcie posiłku</FormLabel>
                       <FormControl>
                         <FileUpload
                           onFileSelect={(file) => {
@@ -221,7 +221,7 @@ export default function AddMeal() {
                   name="restaurantName"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Lokal *</FormLabel>
+                      <FormLabel>Lokal</FormLabel>
                       <FormControl>
                         <div className="relative">
                           <Input 
@@ -320,7 +320,7 @@ export default function AddMeal() {
                   name="description"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Opis smaku i wrażeń *</FormLabel>
+                      <FormLabel>Opis smaku i wrażeń</FormLabel>
                       <FormControl>
                         <Textarea
                           rows={4}

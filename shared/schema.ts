@@ -29,7 +29,7 @@ export const meals = pgTable("meals", {
   dishId: integer("dish_id").references(() => dishes.id),
   photoUrl: text("photo_url"),
   price: decimal("price", { precision: 10, scale: 2 }),
-  description: text("description").notNull(),
+  description: text("description"),
   tasteRating: integer("taste_rating").notNull().default(0),
   presentationRating: integer("presentation_rating").notNull().default(0),
   valueRating: integer("value_rating").notNull().default(0),
