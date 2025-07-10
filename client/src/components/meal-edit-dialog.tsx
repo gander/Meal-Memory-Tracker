@@ -21,6 +21,8 @@ import type { MealWithDetails } from "@shared/schema";
 
 const mealEditSchema = z.object({
   photo: z.any().optional(),
+  dishName: z.string().optional(),
+  restaurantName: z.string().optional(),
   description: z.string().optional(),
   price: z.string().optional(),
   portionSize: z.string().optional(),
@@ -59,6 +61,8 @@ export default function MealEditDialog({ meal, onUpdate }: MealEditDialogProps) 
     resolver: zodResolver(mealEditSchema),
     defaultValues: {
       photo: undefined,
+      dishName: meal.dish?.name || "",
+      restaurantName: meal.restaurant?.name || "",
       description: meal.description || "",
       price: meal.price || "",
       portionSize: meal.portionSize || "",
@@ -76,6 +80,8 @@ export default function MealEditDialog({ meal, onUpdate }: MealEditDialogProps) 
       const formData = new FormData();
       
       if (data.photo) formData.append("photo", data.photo);
+      if (data.dishName) formData.append("dishName", data.dishName);
+      if (data.restaurantName) formData.append("restaurantName", data.restaurantName);
       if (data.description) formData.append("description", data.description);
       if (data.price) formData.append("price", data.price);
       if (data.portionSize) formData.append("portionSize", data.portionSize);
@@ -295,6 +301,40 @@ export default function MealEditDialog({ meal, onUpdate }: MealEditDialogProps) 
             {/* Basic Information */}
             <div className="space-y-4">
               <h3 className="text-lg font-medium">Podstawowe informacje</h3>
+              
+              <FormField
+                control={form.control}
+                name="dishName"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Nazwa dania</FormLabel>
+                    <FormControl>
+                      <Input
+                        placeholder="Wpisz nazwę dania..."
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="restaurantName"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Lokal</FormLabel>
+                    <FormControl>
+                      <Input
+                        placeholder="Wpisz nazwę lokalu..."
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
               
               <FormField
                 control={form.control}

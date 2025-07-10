@@ -299,6 +299,40 @@ export default function AddMeal() {
                   )}
                 />
 
+                {/* Dish Name - AI Detected */}
+                <FormField
+                  control={form.control}
+                  name="dishName"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="flex items-center gap-2">
+                        Nazwa dania
+                        <Sparkles className="h-4 w-4 text-amber-500" title="Automatycznie rozpoznane przez AI" />
+                      </FormLabel>
+                      <FormControl>
+                        <div className="relative">
+                          <Input 
+                            placeholder="Załaduj zdjęcie aby AI rozpoznało danie..." 
+                            {...field}
+                            className={field.value ? "bg-amber-50 border-amber-200" : ""}
+                          />
+                          {field.value && (
+                            <div className="absolute right-3 top-3 text-amber-600">
+                              <Sparkles className="h-4 w-4" title="Rozpoznane przez AI" />
+                            </div>
+                          )}
+                        </div>
+                      </FormControl>
+                      {field.value && (
+                        <p className="text-xs text-amber-600 mt-1">
+                          ✨ Nazwa rozpoznana automatycznie przez AI
+                        </p>
+                      )}
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
                 {/* Restaurant Dropdown */}
                 <FormField
                   control={form.control}
@@ -404,40 +438,6 @@ export default function AddMeal() {
                     />
                   </div>
                 )}
-
-                {/* Dish Name - AI Detected */}
-                <FormField
-                  control={form.control}
-                  name="dishName"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="flex items-center gap-2">
-                        Nazwa dania
-                        <Sparkles className="h-4 w-4 text-amber-500" title="Automatycznie rozpoznane przez AI" />
-                      </FormLabel>
-                      <FormControl>
-                        <div className="relative">
-                          <Input 
-                            placeholder="Załaduj zdjęcie aby AI rozpoznało danie..." 
-                            {...field}
-                            className={field.value ? "bg-amber-50 border-amber-200" : ""}
-                          />
-                          {field.value && (
-                            <div className="absolute right-3 top-3 text-amber-600">
-                              <Sparkles className="h-4 w-4" title="Rozpoznane przez AI" />
-                            </div>
-                          )}
-                        </div>
-                      </FormControl>
-                      {field.value && (
-                        <p className="text-xs text-amber-600 mt-1">
-                          ✨ Nazwa rozpoznana automatycznie przez AI
-                        </p>
-                      )}
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
 
                 {/* Price and Portion Size */}
                 <div className="grid grid-cols-2 gap-4">
