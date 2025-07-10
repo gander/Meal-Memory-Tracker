@@ -1,10 +1,11 @@
 import { useState } from "react";
 import { useMutation } from "@tanstack/react-query";
-import { Edit2, MapPin, Euro } from "lucide-react";
+import { Edit2, MapPin, Euro, Scale } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
+import MealEditDialog from "@/components/meal-edit-dialog";
 import type { MealWithDetails } from "@shared/schema";
 
 interface MealCardProps {
@@ -101,31 +102,39 @@ export default function MealCard({ meal, onUpdate }: MealCardProps) {
             </div>
           </div>
 
-          <div className="mb-4">
-            <p className="text-neutral-700 text-sm leading-relaxed">
-              {meal.description}
-            </p>
-          </div>
-
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-3">
+          {/* Additional Information */}
+          <div className="space-y-2 mb-4">
+            <div className="flex items-center space-x-4 text-sm text-neutral-600">
               {meal.price && (
-                <div className="flex items-center text-warning text-sm">
+                <div className="flex items-center">
                   <Euro className="mr-1 h-3 w-3" />
-                  <span>{meal.price} zł</span>
+                  <span>{meal.price} PLN</span>
                 </div>
               )}
-              <div className="flex space-x-1">
-                {meal.people?.map((person) => (
-                  <Badge key={person.id} variant="outline" className="text-xs">
-                    {person.name}
-                  </Badge>
-                ))}
-              </div>
+              {meal.portionSize && (
+                <div className="flex items-center">
+                  <Scale className="mr-1 h-3 w-3" />
+                  <span>{meal.portionSize}</span>
+                </div>
+              )}
+              {meal.people.length > 0 && (
+                <div>
+                  <span className="text-xs">Z: </span>
+                  <span>{meal.people.map(p => p.name).join(", ")}</span>
+                </div>
+              )}
             </div>
-            <Button variant="ghost" size="icon">
-              <Edit2 className="h-4 w-4" />
-            </Button>
+            {meal.description && (
+              <div className="text-sm text-neutral-700 bg-neutral-50 p-3 rounded">
+                <span className="font-medium">Opis: </span>
+                {meal.description}
+              </div>
+            )}
+          </div>
+
+          {/* Action Button */}
+          <div className="flex justify-end">
+            <MealEditDialog meal={meal} onUpdate={onUpdate} />
           </div>
         </CardContent>
       </div>

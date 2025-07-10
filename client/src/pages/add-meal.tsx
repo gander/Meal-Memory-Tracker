@@ -22,6 +22,7 @@ const mealFormSchema = z.object({
   dishName: z.string().optional(),
   price: z.string().optional(),
   description: z.string().optional(),
+  portionSize: z.string().optional(),
   tasteRating: z.number().min(-3).max(3).default(0),
   presentationRating: z.number().min(-3).max(3).default(0),
   valueRating: z.number().min(-3).max(3).default(0),
@@ -65,7 +66,8 @@ export default function AddMeal() {
       formData.append("restaurantName", data.restaurantName);
       formData.append("dishName", data.dishName || "");
       formData.append("price", data.price || "");
-      formData.append("description", data.description);
+      formData.append("description", data.description || "");
+      formData.append("portionSize", data.portionSize || "");
       formData.append("tasteRating", data.tasteRating.toString());
       formData.append("presentationRating", data.presentationRating.toString());
       formData.append("valueRating", data.valueRating.toString());
@@ -256,29 +258,48 @@ export default function AddMeal() {
                   )}
                 />
 
-                {/* Price */}
-                <FormField
-                  control={form.control}
-                  name="price"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Cena (opcjonalnie)</FormLabel>
-                      <FormControl>
-                        <div className="relative">
+                {/* Price and Portion Size */}
+                <div className="grid grid-cols-2 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="price"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Cena (opcjonalnie)</FormLabel>
+                        <FormControl>
+                          <div className="relative">
+                            <Input 
+                              type="number" 
+                              step="0.01" 
+                              placeholder="0.00" 
+                              className="pl-8"
+                              {...field} 
+                            />
+                            <span className="absolute left-3 top-3 text-neutral-500">zł</span>
+                          </div>
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="portionSize"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Gramatura (opcjonalnie)</FormLabel>
+                        <FormControl>
                           <Input 
-                            type="number" 
-                            step="0.01" 
-                            placeholder="0.00" 
-                            className="pl-8"
+                            placeholder="np. 300g, Duża" 
                             {...field} 
                           />
-                          <span className="absolute left-3 top-3 text-neutral-500">zł</span>
-                        </div>
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
 
                 {/* People Tags */}
                 <div>

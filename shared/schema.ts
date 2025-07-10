@@ -30,6 +30,7 @@ export const meals = pgTable("meals", {
   photoUrl: text("photo_url"),
   price: decimal("price", { precision: 10, scale: 2 }),
   description: text("description"),
+  portionSize: text("portion_size"), // gramatura
   tasteRating: integer("taste_rating").notNull().default(0),
   presentationRating: integer("presentation_rating").notNull().default(0),
   valueRating: integer("value_rating").notNull().default(0),
@@ -124,6 +125,7 @@ export type MealWithDetails = Meal & {
   restaurant?: Restaurant;
   dish?: Dish;
   people: Person[];
+  portionSize?: string;
 };
 
 export type MealStats = {
