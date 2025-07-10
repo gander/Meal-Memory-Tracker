@@ -433,10 +433,10 @@ export class DatabaseStorage implements IStorage {
       .where(sql`EXTRACT(MONTH FROM ${meals.createdAt}) = EXTRACT(MONTH FROM CURRENT_DATE) AND EXTRACT(YEAR FROM ${meals.createdAt}) = EXTRACT(YEAR FROM CURRENT_DATE)`);
 
     return {
-      totalMeals: totalMealsResult.count || 0,
-      avgRating: avgRatingResult.avg || 0,
-      uniqueRestaurants: uniqueRestaurantsResult.count || 0,
-      currentMonth: currentMonthResult.count || 0,
+      totalMeals: Number(totalMealsResult.count) || 0,
+      avgRating: Number(avgRatingResult.avg) || 0,
+      uniqueRestaurants: Number(uniqueRestaurantsResult.count) || 0,
+      currentMonth: Number(currentMonthResult.count) || 0,
     };
   }
 }
