@@ -165,9 +165,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
             console.log(`QOI processing complete: ${imageWidth}x${imageHeight}, data length: ${imageData.length}`);
           } catch (qoiError) {
             console.error('QOI processing failed, falling back to base64:', qoiError);
-            // Fallback to base64 storage if QOI fails
-            const base64Image = imageBuffer.toString('base64');
-            imageData = base64Image;
+            // Fallback to base64 storage if QOI fails  
+            const sharp = require('sharp');
+            const base64ImageFallback = imageBuffer.toString('base64');
+            imageData = base64ImageFallback;
             const metadata = await sharp(imageBuffer).metadata();
             imageWidth = metadata.width || 800;
             imageHeight = metadata.height || 600;

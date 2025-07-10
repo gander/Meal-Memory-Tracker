@@ -43,8 +43,9 @@ class QOIImageService {
         .raw()
         .toBuffer({ resolveWithObject: true });
 
-      // Encode to QOI format
-      const qoiArrayBuffer = QOI.encode(data, {
+      // Encode to QOI format - QOI expects Uint8Array
+      const uint8Data = new Uint8Array(data.buffer, data.byteOffset, data.byteLength);
+      const qoiArrayBuffer = QOI.encode(uint8Data, {
         width,
         height,
         channels: 4, // RGBA
