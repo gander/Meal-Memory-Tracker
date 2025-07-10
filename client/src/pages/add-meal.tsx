@@ -4,7 +4,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import { z } from "zod";
-import { ArrowLeft, Camera, Sparkles, Plus, Check, ChevronsUpDown } from "lucide-react";
+import { ArrowLeft, Camera, Sparkles, Plus, Check, ChevronsUpDown, MapPin, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
@@ -53,7 +53,11 @@ export default function AddMeal() {
   const [isCreatingRestaurant, setIsCreatingRestaurant] = useState(false);
   const [restaurantLocation, setRestaurantLocation] = useState<{latitude: string, longitude: string} | null>(null);
   const textCorrection = useTextCorrection();
-  const geolocation = useGeolocation();
+  const geolocation = useGeolocation({ 
+    enableHighAccuracy: true,
+    timeout: 15000,
+    maximumAge: 300000 // 5 minutes
+  });
 
   // Fetch restaurants for dropdown
   const { data: restaurants = [] } = useQuery<Restaurant[]>({
@@ -346,6 +350,49 @@ export default function AddMeal() {
             </CardTitle>
           </CardHeader>
           <CardContent>
+            {/* GPS Status Indicator */}
+            <div className="mb-6 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <MapPin className={cn(
+                    "h-4 w-4",
+                    geolocation.permission === 'granted' && geolocation.coordinates ? "text-green-600" : 
+                    geolocation.permission === 'denied' ? "text-red-600" : 
+                    geolocation.loading ? "text-yellow-600" : "text-gray-600"
+                  )} />
+                  <span className="text-sm font-medium">
+                    {geolocation.loading ? "Pobieranie lokalizacji..." :
+                     geolocation.permission === 'denied' ? "Dostęp do lokalizacji zablokowany" :
+                     geolocation.coordinates ? 
+                       `GPS aktywny (dokładność: ${Math.round(geolocation.coordinates.accuracy)}m)` :
+                       "GPS nieaktywny"
+                    }
+                  </span>
+                </div>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  onClick={geolocation.requestLocation}
+                  disabled={geolocation.loading}
+                  className="flex items-center gap-1"
+                >
+                  <RefreshCw className={cn("h-3 w-3", geolocation.loading && "animate-spin")} />
+                  Odśwież
+                </Button>
+              </div>
+              {geolocation.coordinates && (
+                <div className="mt-2 text-xs text-blue-600">
+                  Restauracje są sortowane według odległości od Twojej lokalizacji
+                </div>
+              )}
+              {geolocation.error && (
+                <div className="mt-2 text-xs text-red-600">
+                  Błąd: {geolocation.error.message}
+                </div>
+              )}
+            </div>
+
             <Form {...form}>
               <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
                 {/* Photo Upload */}

@@ -12,6 +12,7 @@ interface GeolocationOptions {
   timeout?: number;
   maximumAge?: number;
   watchPosition?: boolean;
+  autoRequest?: boolean;
 }
 
 export function useGeolocation(options: GeolocationOptions = {}) {
@@ -21,6 +22,9 @@ export function useGeolocation(options: GeolocationOptions = {}) {
     loading: false,
     permission: 'prompt',
   });
+
+  // Auto-request location on mount if enabled
+  const autoRequest = options.autoRequest !== false;
 
   const requestLocation = useCallback(async () => {
     if (!navigator.geolocation) {
@@ -116,6 +120,13 @@ export function useGeolocation(options: GeolocationOptions = {}) {
       permission: 'prompt',
     });
   }, []);
+
+  // Auto-request location on mount
+  useEffect(() => {
+    if (autoRequest) {
+      requestLocation();
+    }
+  }, [autoRequest, requestLocation]);
 
   return {
     ...state,
