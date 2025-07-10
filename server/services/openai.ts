@@ -27,12 +27,12 @@ class AIService {
         messages: [
           {
             role: "system",
-            content: `Jesteś ekspertem od analizy zdjęć posiłków. Analizuj zdjęcia i sugeruj nazwy dań, kategorie, i potencjalne restauracje. 
+            content: `Jesteś ekspertem od analizy zdjęć posiłków. Analizuj zdjęcia i sugeruj nazwy dań oraz oceny. 
+            NIE sugeruj nazw restauracji - to będzie wybierane na podstawie lokalizacji.
             Odpowiadaj w formacie JSON z polskimi nazwami. Uwzględnij opis użytkownika jeśli jest dostępny.
             Format odpowiedzi: {
               "suggestedDish": "nazwa dania po polsku",
               "suggestedCategory": "kategoria dania",
-              "suggestedRestaurant": "typ restauracji lub nazwa jeśli rozpoznawalna",
               "suggestedRatings": {
                 "taste": ocena_smaku_od_minus3_do_plus3,
                 "presentation": ocena_prezentacji_od_minus3_do_plus3,
@@ -67,8 +67,8 @@ class AIService {
       return {
         suggestedDish: result.suggestedDish || "Nieznane danie",
         suggestedCategory: result.suggestedCategory || "Inne",
-        suggestedRestaurant: result.suggestedRestaurant,
-        suggestedAddress: result.suggestedAddress,
+        suggestedRestaurant: undefined, // Removed as per user request
+        suggestedAddress: undefined,
         suggestedRatings: result.suggestedRatings || {
           taste: 0,
           presentation: 0,
