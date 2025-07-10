@@ -64,11 +64,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Image not found" });
       }
       
-      const pngBuffer = await qoiImageService.convertQOIToWebFormat(
-        meal.imageData,
-        meal.imageWidth || 800,
-        meal.imageHeight || 600
-      );
+      let pngBuffer: Buffer;
+      
+      try {
+        // Try QOI decoding first
+        pngBuffer = await qoiImageService.convertQOIToWebFormat(
+          meal.imageData,
+          meal.imageWidth || 800,
+          meal.imageHeight || 600
+        );
+      } catch (qoiError) {
+        console.log('QOI decoding failed, trying base64 fallback');
+        // Fallback: treat as base64 image and convert to PNG
+        const imageBuffer = Buffer.from(meal.imageData, 'base64');
+        pngBuffer = await sharp(imageBuffer).png().toBuffer();
+      }
       
       res.set({
         'Content-Type': 'image/png',
@@ -146,15 +156,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
           aiAnalysis = await aiService.analyzeMealPhoto(base64Image, req.body.description || "");
           
           // Process image for QOI storage in database
-          const qoiResult = await qoiImageService.processImageForStorage(imageBuffer);
-          imageData = qoiResult.qoiData;
-          imageWidth = qoiResult.width;
-          imageHeight = qoiResult.height;
+          console.log('Starting QOI image processing...');
+          try {
+            const qoiResult = await qoiImageService.processImageForStorage(imageBuffer);
+            imageData = qoiResult.qoiData;
+            imageWidth = qoiResult.width;
+            imageHeight = qoiResult.height;
+            console.log(`QOI processing complete: ${imageWidth}x${imageHeight}, data length: ${imageData.length}`);
+          } catch (qoiError) {
+            console.error('QOI processing failed, falling back to base64:', qoiError);
+            // Fallback to base64 storage if QOI fails
+            const base64Image = imageBuffer.toString('base64');
+            imageData = base64Image;
+            const metadata = await sharp(imageBuffer).metadata();
+            imageWidth = metadata.width || 800;
+            imageHeight = metadata.height || 600;
+            console.log(`Fallback base64 processing: ${imageWidth}x${imageHeight}, data length: ${imageData.length}`);
+          }
           
           // Clean up temporary file
           await fs.promises.unlink(req.file.path);
         } catch (processingError) {
           console.error("Image processing failed:", processingError);
+          console.error("Stack trace:", processingError.stack);
           // Clean up temporary file on error
           if (req.file?.path) {
             await fs.promises.unlink(req.file.path).catch(() => {});
