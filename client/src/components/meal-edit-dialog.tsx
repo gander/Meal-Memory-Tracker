@@ -11,6 +11,8 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient } from "@/lib/queryClient";
+import { useTextCorrection } from "@/hooks/use-text-correction";
+import TextCorrectionIndicator from "@/components/ui/text-correction-indicator";
 import RatingSlider from "@/components/ui/rating-slider";
 import { Switch } from "@/components/ui/switch";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
@@ -42,6 +44,7 @@ export default function MealEditDialog({ meal, onUpdate }: MealEditDialogProps) 
   const [newImagePreview, setNewImagePreview] = useState<string | null>(null);
   const [hasImageToDelete, setHasImageToDelete] = useState(false);
   const { toast } = useToast();
+  const textCorrection = useTextCorrection();
 
   // Cleanup preview URL when component unmounts
   useEffect(() => {
@@ -172,7 +175,13 @@ export default function MealEditDialog({ meal, onUpdate }: MealEditDialogProps) 
     form.setValue("photo", undefined);
   };
 
-  const onSubmit = (data: MealEditFormData) => {
+  const onSubmit = async (data: MealEditFormData) => {
+    // Auto-correct description before submitting
+    if (data.description && data.description.trim().length > 0) {
+      const correctedDescription = await textCorrection.correctText(data.description);
+      data.description = correctedDescription;
+    }
+    
     updateMutation.mutate(data);
   };
 
@@ -299,6 +308,11 @@ export default function MealEditDialog({ meal, onUpdate }: MealEditDialogProps) 
                         {...field}
                       />
                     </FormControl>
+                    <TextCorrectionIndicator
+                      corrections={textCorrection.lastCorrection?.corrections || []}
+                      isVisible={textCorrection.isVisible}
+                      onHide={textCorrection.hideCorrections}
+                    />
                     <FormMessage />
                   </FormItem>
                 )}

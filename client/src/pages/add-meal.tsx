@@ -20,6 +20,8 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { cn } from "@/lib/utils";
 import { useGeolocation } from "@/hooks/use-geolocation";
 import LocationPicker from "@/components/ui/location-picker";
+import { useTextCorrection } from "@/hooks/use-text-correction";
+import TextCorrectionIndicator from "@/components/ui/text-correction-indicator";
 import type { Restaurant } from "@shared/schema";
 
 const mealFormSchema = z.object({
@@ -49,6 +51,7 @@ export default function AddMeal() {
   const [restaurantSearch, setRestaurantSearch] = useState("");
   const [isCreatingRestaurant, setIsCreatingRestaurant] = useState(false);
   const [restaurantLocation, setRestaurantLocation] = useState<{latitude: string, longitude: string} | null>(null);
+  const textCorrection = useTextCorrection();
 
   // Fetch restaurants for dropdown
   const { data: restaurants = [] } = useQuery<Restaurant[]>({
@@ -234,7 +237,13 @@ export default function AddMeal() {
 
 
 
-  const onSubmit = (data: MealFormData) => {
+  const onSubmit = async (data: MealFormData) => {
+    // Auto-correct description before submitting
+    if (data.description && data.description.trim().length > 0) {
+      const correctedDescription = await textCorrection.correctText(data.description);
+      data.description = correctedDescription;
+    }
+    
     createMealMutation.mutate(data);
   };
 
@@ -522,6 +531,11 @@ export default function AddMeal() {
                           {...field}
                         />
                       </FormControl>
+                      <TextCorrectionIndicator
+                        corrections={textCorrection.lastCorrection?.corrections || []}
+                        isVisible={textCorrection.isVisible}
+                        onHide={textCorrection.hideCorrections}
+                      />
                       <FormMessage />
                     </FormItem>
                   )}

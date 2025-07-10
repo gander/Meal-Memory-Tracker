@@ -556,6 +556,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Text correction endpoint
+  app.post("/api/correct-text", async (req, res) => {
+    try {
+      const { text } = req.body;
+      
+      if (!text || typeof text !== 'string') {
+        return res.status(400).json({ message: "Text is required" });
+      }
+
+      const correction = await aiService.correctDescription(text);
+      res.json(correction);
+    } catch (error) {
+      console.error("Text correction error:", error);
+      res.status(500).json({ message: "Failed to correct text" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

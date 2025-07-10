@@ -19,6 +19,26 @@ interface MealAnalysis {
   confidence: number;
 }
 
+interface TextCorrection {
+  correctedText: string;
+  correctionsMade: boolean;
+  corrections: Array<{
+    original: string;
+    corrected: string;
+    type: 'spelling' | 'punctuation' | 'diacritics' | 'grammar';
+  }>;
+}
+
+interface TextCorrection {
+  correctedText: string;
+  correctionsMade: boolean;
+  corrections: Array<{
+    original: string;
+    corrected: string;
+    type: 'spelling' | 'punctuation' | 'diacritics' | 'grammar';
+  }>;
+}
+
 class AIService {
   async analyzeMealPhoto(base64Image: string, description?: string): Promise<MealAnalysis> {
     try {
@@ -136,6 +156,74 @@ class AIService {
     } catch (error) {
       console.error("Dish suggestion error:", error);
       return [];
+    }
+  }
+
+  async correctDescription(description: string): Promise<TextCorrection> {
+    try {
+      if (!description || description.trim().length === 0) {
+        return {
+          correctedText: description,
+          correctionsMade: false,
+          corrections: []
+        };
+      }
+
+      const response = await openai.chat.completions.create({
+        model: "gpt-4o", // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
+        messages: [
+          {
+            role: "system",
+            content: `You are a Polish text correction specialist. Correct the following text issues:
+            
+            1. Fix spelling errors and typos
+            2. Add missing Polish diacritics (ą, ć, ę, ł, ń, ó, ś, ź, ż)
+            3. Correct punctuation and capitalization
+            4. Fix garbled or jumbled words using context
+            5. Improve grammar while preserving the original meaning and style
+            
+            Rules:
+            - Preserve the original tone and style
+            - Only make necessary corrections
+            - Keep food-related terms accurate
+            - Maintain casual/informal language if that's the original style
+            - Don't add new content, only fix existing text
+            
+            Respond with JSON containing:
+            {
+              "correctedText": "corrected version",
+              "correctionsMade": boolean,
+              "corrections": [
+                {
+                  "original": "original word/phrase",
+                  "corrected": "corrected word/phrase", 
+                  "type": "spelling|punctuation|diacritics|grammar"
+                }
+              ]
+            }`
+          },
+          {
+            role: "user",
+            content: `Correct this Polish text: "${description}"`
+          }
+        ],
+        response_format: { type: "json_object" },
+      });
+
+      const result = JSON.parse(response.choices[0].message.content || '{}');
+      
+      return {
+        correctedText: result.correctedText || description,
+        correctionsMade: result.correctionsMade || false,
+        corrections: result.corrections || []
+      };
+    } catch (error) {
+      console.error('Error correcting description:', error);
+      return {
+        correctedText: description,
+        correctionsMade: false,
+        corrections: []
+      };
     }
   }
 }
