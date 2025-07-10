@@ -9,7 +9,7 @@ This is a full-stack web application for tracking and rating meals at restaurant
 Preferred communication style: Simple, everyday language.
 Documentation language: English
 Author attribution: Adam Gąsowski
-Version management: Current version 0.3.0, update only when explicitly requested, maintain English changelog
+Version management: Current version 0.4.0, update only when explicitly requested, maintain English changelog
 
 ## System Architecture
 
@@ -109,6 +109,18 @@ Version management: Current version 0.3.0, update only when explicitly requested
 - `NODE_ENV`: Environment mode (development/production)
 
 ## Recent Changes (January 2025)
+
+### Comprehensive GPS Integration (v0.4.0)
+- **Problem**: Users needed automatic location tracking for restaurants without complex manual entry
+- **Solution**: Implemented complete GPS system with background location capture and editing capabilities
+- **Features**:
+  - Automatic GPS coordinate capture during restaurant creation
+  - Smart permission management with clear user feedback and error handling
+  - Background location saving without interrupting user workflow
+  - Visual GPS indicators showing location status and accuracy
+  - Manual coordinate editing with validation and format checking
+  - GPS coordinate display in restaurant lists with precision formatting
+  - LocationPicker component with geolocation API integration
 
 ### AI-Powered Dish Recognition (v0.3.0)
 - **Problem**: Manual dish name entry was time-consuming and error-prone

@@ -5,6 +5,22 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.0] - 2025-01-10
+
+### Added
+- Comprehensive GPS integration system with automatic location capture
+- LocationPicker component with geolocation permissions management
+- Background GPS coordinate saving during restaurant creation
+- Manual GPS coordinate editing with validation and error handling
+- Visual GPS indicators showing location status and accuracy in UI
+- GPS coordinate display in restaurant management with precision formatting
+- Smart permission handling with clear user feedback for denied/blocked access
+
+### Enhanced
+- Restaurant creation workflow now automatically captures GPS coordinates
+- Restaurant management interface includes GPS editing capabilities
+- Location-based features infrastructure for future nearby restaurant suggestions
+
 ## [0.3.0] - 2025-01-10
 
 ### Added
