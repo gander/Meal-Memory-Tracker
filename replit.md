@@ -111,6 +111,18 @@ Version management: Never display version in README, update only when explicitly
 
 ## Recent Changes (January 2025)
 
+### Complete People Selection in Edit Dialog (v0.7.0)
+- **Problem**: Users could not manage people selection when editing existing meals
+- **Solution**: Implemented full people selection functionality in meal edit dialog matching add meal form
+- **Features**:
+  - Select from existing people with interactive button interface
+  - Create new people directly from edit dialog with real-time database updates
+  - Remove people from meals with visual badge interface
+  - Form validation and proper state management for people arrays
+  - Consistent UI/UX between add meal and edit meal workflows
+  - Database integrity with foreign key constraint handling
+  - Cache invalidation and optimistic updates for smooth user experience
+
 ### QOI Database Image Storage (v0.6.0)
 - **Problem**: File-based image storage was complex and not portable across environments
 - **Solution**: Implemented QOI (Quite OK Image Format) for efficient database storage of meal photos

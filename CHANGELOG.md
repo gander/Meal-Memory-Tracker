@@ -5,6 +5,28 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.7.0] - 2025-01-10
+
+### Added
+- **Complete People Selection in Edit Dialog**: Full people management functionality in meal edit dialog
+  - Select from existing people or create new ones directly in edit dialog
+  - Visual people selection with interactive buttons and badges
+  - People removal functionality with one-click delete from meal
+  - Form validation and database integration for people management
+  - Consistent UI/UX matching the add meal form experience
+
+### Enhanced
+- Meal edit dialog now provides complete CRUD functionality for all meal properties
+- People selection workflow unified across add and edit meal forms
+- Database integrity maintained with proper foreign key handling
+
+### Technical Implementation
+- Added `useQuery` hook for fetching people in edit dialog
+- Implemented `createPersonMutation` for real-time person creation
+- Enhanced form schema validation with `peopleNames` array field
+- Proper state management for people selection and form updates
+- Cache invalidation and optimistic updates for smooth user experience
+
 ## [0.6.0] - 2025-01-10
 
 ### Added
