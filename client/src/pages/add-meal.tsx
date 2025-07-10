@@ -1,10 +1,10 @@
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import { z } from "zod";
-import { ArrowLeft, Camera, Sparkles } from "lucide-react";
+import { ArrowLeft, Camera, Sparkles, Plus, Check, ChevronsUpDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
@@ -15,6 +15,10 @@ import { useToast } from "@/hooks/use-toast";
 import FileUpload from "@/components/ui/file-upload";
 import RatingSlider from "@/components/ui/rating-slider";
 import { queryClient } from "@/lib/queryClient";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { cn } from "@/lib/utils";
+import type { Restaurant } from "@shared/schema";
 
 const mealFormSchema = z.object({
   photo: z.any().optional(),
@@ -39,6 +43,49 @@ export default function AddMeal() {
   const { toast } = useToast();
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [newPersonName, setNewPersonName] = useState("");
+  const [restaurantOpen, setRestaurantOpen] = useState(false);
+  const [restaurantSearch, setRestaurantSearch] = useState("");
+  const [isCreatingRestaurant, setIsCreatingRestaurant] = useState(false);
+
+  // Fetch restaurants for dropdown
+  const { data: restaurants = [] } = useQuery<Restaurant[]>({
+    queryKey: ["/api/restaurants"],
+    queryFn: async () => {
+      const response = await fetch("/api/restaurants");
+      if (!response.ok) throw new Error("Failed to fetch restaurants");
+      return response.json();
+    },
+  });
+
+  // Mutation to create new restaurant
+  const createRestaurantMutation = useMutation({
+    mutationFn: async (name: string) => {
+      const response = await fetch("/api/restaurants", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name }),
+      });
+      if (!response.ok) throw new Error("Failed to create restaurant");
+      return response.json();
+    },
+    onSuccess: (newRestaurant) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/restaurants"] });
+      form.setValue("restaurantName", newRestaurant.name);
+      setRestaurantSearch("");
+      setIsCreatingRestaurant(false);
+      toast({
+        title: "Restauracja dodana",
+        description: `${newRestaurant.name} została dodana do listy.`,
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Błąd",
+        description: "Nie udało się dodać restauracji.",
+        variant: "destructive",
+      });
+    },
+  });
 
   const form = useForm<MealFormData>({
     resolver: zodResolver(mealFormSchema),
@@ -120,13 +167,17 @@ export default function AddMeal() {
       if (response.ok) {
         const analysis = await response.json();
         
-        // Update form with AI suggestions
+        // Automatically fill dish name with confidence
         if (analysis.suggestedDish) {
           form.setValue("dishName", analysis.suggestedDish);
         }
-        if (analysis.suggestedRestaurant) {
+        
+        // Suggest restaurant if not already selected
+        if (analysis.suggestedRestaurant && !form.getValues("restaurantName")) {
           form.setValue("restaurantName", analysis.suggestedRestaurant);
         }
+        
+        // Apply suggested ratings
         if (analysis.suggestedRatings) {
           form.setValue("tasteRating", analysis.suggestedRatings.taste || 0);
           form.setValue("presentationRating", analysis.suggestedRatings.presentation || 0);
@@ -135,8 +186,8 @@ export default function AddMeal() {
         }
 
         toast({
-          title: "Analiza AI zakończona",
-          description: "Sugestie zostały dodane do formularza.",
+          title: "Nazwa dania rozpoznana!",
+          description: `AI rozpoznało: ${analysis.suggestedDish}`,
         });
       }
     } catch (error) {
@@ -160,6 +211,17 @@ export default function AddMeal() {
     const currentPeople = form.getValues("peopleNames");
     form.setValue("peopleNames", currentPeople.filter(p => p !== name));
   };
+
+  const handleCreateRestaurant = () => {
+    if (restaurantSearch.trim()) {
+      setIsCreatingRestaurant(true);
+      createRestaurantMutation.mutate(restaurantSearch.trim());
+    }
+  };
+
+  const filteredRestaurants = restaurants.filter(restaurant =>
+    restaurant.name.toLowerCase().includes(restaurantSearch.toLowerCase())
+  );
 
   const onSubmit = (data: MealFormData) => {
     createMealMutation.mutate(data);
@@ -217,42 +279,129 @@ export default function AddMeal() {
                   )}
                 />
 
-                {/* Restaurant */}
+                {/* Restaurant Dropdown */}
                 <FormField
                   control={form.control}
                   name="restaurantName"
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Lokal</FormLabel>
-                      <FormControl>
-                        <div className="relative">
-                          <Input 
-                            placeholder="Wpisz nazwę lokalu..." 
-                            {...field} 
-                          />
-                          <div className="absolute right-3 top-3 text-neutral-400">
-                            <Sparkles className="h-4 w-4" title="AI suggestions" />
-                          </div>
-                        </div>
-                      </FormControl>
+                      <Popover open={restaurantOpen} onOpenChange={setRestaurantOpen}>
+                        <PopoverTrigger asChild>
+                          <FormControl>
+                            <Button
+                              variant="outline"
+                              role="combobox"
+                              aria-expanded={restaurantOpen}
+                              className={cn(
+                                "w-full justify-between",
+                                !field.value && "text-muted-foreground"
+                              )}
+                            >
+                              {field.value || "Wybierz lokal..."}
+                              <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                            </Button>
+                          </FormControl>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-full p-0">
+                          <Command>
+                            <CommandInput
+                              placeholder="Szukaj lokalu..."
+                              value={restaurantSearch}
+                              onValueChange={setRestaurantSearch}
+                            />
+                            <CommandList>
+                              <CommandEmpty>
+                                <div className="p-4 text-center">
+                                  <p className="text-sm text-muted-foreground mb-3">
+                                    Nie znaleziono lokalu
+                                  </p>
+                                  {restaurantSearch && (
+                                    <Button
+                                      size="sm"
+                                      onClick={handleCreateRestaurant}
+                                      disabled={isCreatingRestaurant}
+                                      className="gap-2"
+                                    >
+                                      <Plus className="h-4 w-4" />
+                                      Dodaj "{restaurantSearch}"
+                                    </Button>
+                                  )}
+                                </div>
+                              </CommandEmpty>
+                              <CommandGroup>
+                                {filteredRestaurants.map((restaurant) => (
+                                  <CommandItem
+                                    key={restaurant.id}
+                                    value={restaurant.name}
+                                    onSelect={() => {
+                                      field.onChange(restaurant.name);
+                                      setRestaurantOpen(false);
+                                      setRestaurantSearch("");
+                                    }}
+                                  >
+                                    <Check
+                                      className={cn(
+                                        "mr-2 h-4 w-4",
+                                        field.value === restaurant.name
+                                          ? "opacity-100"
+                                          : "opacity-0"
+                                      )}
+                                    />
+                                    {restaurant.name}
+                                  </CommandItem>
+                                ))}
+                                {restaurantSearch && 
+                                 !filteredRestaurants.some(r => 
+                                   r.name.toLowerCase() === restaurantSearch.toLowerCase()
+                                 ) && (
+                                  <CommandItem
+                                    onSelect={handleCreateRestaurant}
+                                    className="border-t"
+                                  >
+                                    <Plus className="mr-2 h-4 w-4" />
+                                    Dodaj "{restaurantSearch}"
+                                  </CommandItem>
+                                )}
+                              </CommandGroup>
+                            </CommandList>
+                          </Command>
+                        </PopoverContent>
+                      </Popover>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
 
-                {/* Dish Name */}
+                {/* Dish Name - AI Detected */}
                 <FormField
                   control={form.control}
                   name="dishName"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Nazwa dania</FormLabel>
+                      <FormLabel className="flex items-center gap-2">
+                        Nazwa dania
+                        <Sparkles className="h-4 w-4 text-amber-500" title="Automatycznie rozpoznane przez AI" />
+                      </FormLabel>
                       <FormControl>
-                        <Input 
-                          placeholder="AI rozpozna danie ze zdjęcia..." 
-                          {...field} 
-                        />
+                        <div className="relative">
+                          <Input 
+                            placeholder="Załaduj zdjęcie aby AI rozpoznało danie..." 
+                            {...field}
+                            className={field.value ? "bg-amber-50 border-amber-200" : ""}
+                          />
+                          {field.value && (
+                            <div className="absolute right-3 top-3 text-amber-600">
+                              <Sparkles className="h-4 w-4" title="Rozpoznane przez AI" />
+                            </div>
+                          )}
+                        </div>
                       </FormControl>
+                      {field.value && (
+                        <p className="text-xs text-amber-600 mt-1">
+                          ✨ Nazwa rozpoznana automatycznie przez AI
+                        </p>
+                      )}
                       <FormMessage />
                     </FormItem>
                   )}
