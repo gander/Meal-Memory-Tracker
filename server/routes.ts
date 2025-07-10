@@ -8,6 +8,8 @@ import { qoiImageService } from "./services/qoi-image";
 import multer from "multer";
 import path from "path";
 import fs from "fs";
+import archiver from "archiver";
+import sharp from "sharp";
 
 // Helper function for safe file deletion
 const safeDeleteFile = async (filePath: string): Promise<boolean> => {
@@ -675,6 +677,144 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Text correction error:", error);
       res.status(500).json({ message: "Failed to correct text" });
+    }
+  });
+
+  // Data export endpoint
+  app.get("/api/export", async (req, res) => {
+    try {
+      console.log("Starting data export...");
+      
+      // Set response headers for ZIP download
+      const timestamp = new Date().toISOString().slice(0, 10);
+      const filename = `meal-tracking-export-${timestamp}.zip`;
+      
+      res.setHeader('Content-Type', 'application/zip');
+      res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+      
+      // Create ZIP archive
+      const archive = archiver('zip', {
+        zlib: { level: 9 } // Maximum compression
+      });
+      
+      // Handle archive errors
+      archive.on('error', (err) => {
+        console.error('Archive error:', err);
+        throw err;
+      });
+      
+      // Pipe archive to response
+      archive.pipe(res);
+      
+      // Fetch all data
+      const [meals, restaurants, dishes, people, stats] = await Promise.all([
+        storage.getMeals({ limit: 10000 }), // Get all meals
+        storage.getRestaurants(),
+        storage.getDishes(),
+        storage.getPeople(),
+        storage.getMealStats()
+      ]);
+      
+      console.log(`Exporting ${meals.length} meals, ${restaurants.length} restaurants, ${dishes.length} dishes, ${people.length} people`);
+      
+      // Create data export object
+      const exportData = {
+        exportInfo: {
+          exportDate: new Date().toISOString(),
+          applicationName: "Co i gdzie jedliśmy?",
+          version: "0.10.0",
+          totalMeals: meals.length,
+          totalRestaurants: restaurants.length,
+          totalDishes: dishes.length,
+          totalPeople: people.length
+        },
+        statistics: stats,
+        meals: meals.map(meal => ({
+          ...meal,
+          // Remove QOI data from JSON export (images will be separate files)
+          imageData: meal.imageData ? "See images/ folder" : null
+        })),
+        restaurants,
+        dishes,
+        people
+      };
+      
+      // Add JSON data file to archive
+      archive.append(JSON.stringify(exportData, null, 2), { name: 'data.json' });
+      
+      // Create images folder and add images
+      let imageCount = 0;
+      for (const meal of meals) {
+        if (meal.imageData) {
+          try {
+            let imageBuffer: Buffer;
+            const filename = `meal-${meal.id}.png`;
+            
+            try {
+              // Try QOI decoding first
+              imageBuffer = await qoiImageService.convertQOIToWebFormat(
+                meal.imageData,
+                meal.imageWidth || 800,
+                meal.imageHeight || 600
+              );
+            } catch (qoiError) {
+              console.log(`QOI decoding failed for meal ${meal.id}, trying base64 fallback`);
+              // Fallback: treat as base64 image and convert to PNG
+              const base64Buffer = Buffer.from(meal.imageData, 'base64');
+              imageBuffer = await sharp(base64Buffer).png().toBuffer();
+            }
+            
+            archive.append(imageBuffer, { name: `images/${filename}` });
+            imageCount++;
+          } catch (error) {
+            console.error(`Failed to process image for meal ${meal.id}:`, error);
+            // Continue with other images even if one fails
+          }
+        }
+      }
+      
+      console.log(`Added ${imageCount} images to export`);
+      
+      // Add README file with export information
+      const readmeContent = `# Eksport danych z aplikacji "Co i gdzie jedliśmy?"
+
+## Informacje o eksporcie
+- Data eksportu: ${new Date().toLocaleString('pl-PL')}
+- Wersja aplikacji: 0.10.0
+- Łączna liczba posiłków: ${meals.length}
+- Łączna liczba restauracji: ${restaurants.length}
+- Łączna liczba dań: ${dishes.length}
+- Łączna liczba osób: ${people.length}
+
+## Struktura plików
+- \`data.json\` - Wszystkie dane w formacie JSON
+- \`images/\` - Zdjęcia posiłków (format PNG)
+  - \`meal-[ID].png\` - Zdjęcie posiłku o danym ID
+
+## Format danych
+Plik \`data.json\` zawiera:
+- \`exportInfo\` - Informacje o eksporcie
+- \`statistics\` - Statystyki aplikacji
+- \`meals\` - Lista wszystkich posiłków
+- \`restaurants\` - Lista wszystkich restauracji
+- \`dishes\` - Lista wszystkich dań
+- \`people\` - Lista wszystkich osób
+
+## Uwagi
+- Zdjęcia są eksportowane w formacie PNG dla maksymalnej kompatybilności
+- Wszystkie daty są w formacie ISO 8601
+- Ceny są zapisane jako stringi z dokładnością do dwóch miejsc po przecinku
+`;
+      
+      archive.append(readmeContent, { name: 'README.md' });
+      
+      // Finalize the archive
+      await archive.finalize();
+      console.log("Data export completed successfully");
+      
+    } catch (error) {
+      console.error("Export error:", error);
+      res.status(500).json({ message: "Failed to export data" });
     }
   });
 

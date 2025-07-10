@@ -3,7 +3,7 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { ArrowLeft, Plus, Pencil, Trash2, Building, Utensils, Users } from "lucide-react";
+import { ArrowLeft, Plus, Pencil, Trash2, Building, Utensils, Users, Download, Package } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -382,6 +382,96 @@ function DishManager() {
   );
 }
 
+function DataExportManager() {
+  const [isExporting, setIsExporting] = useState(false);
+  const { toast } = useToast();
+
+  const exportData = async () => {
+    try {
+      setIsExporting(true);
+      
+      const response = await fetch("/api/export");
+      
+      if (!response.ok) {
+        throw new Error("Eksport nie powiódł się");
+      }
+      
+      // Get the filename from Content-Disposition header
+      const contentDisposition = response.headers.get('Content-Disposition');
+      const filename = contentDisposition 
+        ? contentDisposition.split('filename=')[1].replace(/"/g, '')
+        : `meal-tracking-export-${new Date().toISOString().slice(0, 10)}.zip`;
+      
+      // Create blob and download
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+      
+      toast({
+        title: "Eksport zakończony pomyślnie",
+        description: `Pobrano plik: ${filename}`
+      });
+    } catch (error) {
+      console.error("Export error:", error);
+      toast({
+        title: "Błąd eksportu",
+        description: "Nie udało się wyeksportować danych",
+        variant: "destructive"
+      });
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <Package className="h-5 w-5" />
+          Eksport danych
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="text-sm text-muted-foreground">
+          Eksportuj wszystkie dane aplikacji do archiwum ZIP zawierającego:
+        </div>
+        <ul className="text-sm text-muted-foreground space-y-1 ml-4">
+          <li>• Wszystkie posiłki z ocenami i opisami</li>
+          <li>• Zdjęcia posiłków w formacie PNG</li>
+          <li>• Listę wszystkich restauracji</li>
+          <li>• Listę wszystkich dań</li>
+          <li>• Listę wszystkich osób</li>
+          <li>• Statystyki aplikacji</li>
+          <li>• Plik README z informacjami o strukturze danych</li>
+        </ul>
+        <Button 
+          onClick={exportData} 
+          disabled={isExporting}
+          className="w-full"
+        >
+          {isExporting ? (
+            <>
+              <Package className="h-4 w-4 mr-2 animate-spin" />
+              Eksportowanie...
+            </>
+          ) : (
+            <>
+              <Download className="h-4 w-4 mr-2" />
+              Eksportuj wszystkie dane
+            </>
+          )}
+        </Button>
+      </CardContent>
+    </Card>
+  );
+}
+
 function PeopleManager() {
   const [editingPerson, setEditingPerson] = useState<any>(null);
   const [showForm, setShowForm] = useState(false);
@@ -530,10 +620,11 @@ export default function Manage() {
       {/* Main Content */}
       <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         <Tabs defaultValue="restaurants" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-3">
+          <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="restaurants">Lokale</TabsTrigger>
             <TabsTrigger value="dishes">Dania</TabsTrigger>
             <TabsTrigger value="people">Osoby</TabsTrigger>
+            <TabsTrigger value="export">Eksport</TabsTrigger>
           </TabsList>
 
           <TabsContent value="restaurants">
@@ -546,6 +637,10 @@ export default function Manage() {
 
           <TabsContent value="people">
             <PeopleManager />
+          </TabsContent>
+
+          <TabsContent value="export">
+            <DataExportManager />
           </TabsContent>
         </Tabs>
       </main>
